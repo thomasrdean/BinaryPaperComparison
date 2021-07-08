@@ -1,0 +1,856 @@
+RTPS DEFINITIONS ::= BEGIN
+    EXPORTS PDU_RTPS;
+    [PDU_RTPS ^ PDU] ::= (FULL_RTPS | PING_RTPS) < transfer >
+    </ transfer >
+
+    [PING_RTPS ^ PING] ::= SEQUENCE {
+        [Header_PING_RTPS ^ Header] HEADER_RTPS (SIZE DEFINED),
+        [ping_PING_RTPS ^ ping] OCTET STRING (SIZE 8 BYTES)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[Header_PING_RTPS.protoName_HEADER_RTPS ^ Header.protoName] == 'RTPS' || [Header_PING_RTPS.protoName_HEADER_RTPS ^ Header.protoName] == 'RTPX'}
+        Back {[ping_PING_RTPS ^ ping] == 5639707757994659399}
+        Callback
+    </ transfer >
+
+    [FULL_RTPS ^ FULL] ::= SEQUENCE {
+        [Header_FULL_RTPS ^ Header] HEADER_RTPS (SIZE DEFINED),
+        [guidPrefix_FULL_RTPS ^ guidPrefix] GUIDPREFIX_RTPS (SIZE DEFINED),
+        [subMsg_FULL_RTPS ^ subMsg] SET OF SUBMESSAGE_RTPS (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[Header_FULL_RTPS.protoName_HEADER_RTPS ^ Header.protoName] == 'RTPS' || [Header_FULL_RTPS.protoName_HEADER_RTPS ^ Header.protoName] == 'RTPX'}
+        Forward {END ([subMsg_FULL_RTPS ^ subMsg])}
+        Callback @ SUBMESSAGE_RTPS
+    </ transfer >
+
+    [HEADER_RTPS ^ HEADER] ::= SEQUENCE {
+        [protoName_HEADER_RTPS ^ protoName] OCTET STRING (SIZE 4 BYTES),
+        [version_HEADER_RTPS ^ version] INTEGER (SIZE 2 BYTES),
+        [vendorId_HEADER_RTPS ^ vendorId] INTEGER (SIZE 2 BYTES)
+    } (ENCODED BY CUSTOM)
+
+    [GUIDPREFIX_RTPS ^ GUIDPREFIX] ::= SEQUENCE {
+        [hostID_GUIDPREFIX_RTPS ^ hostID] INTEGER (SIZE 4 BYTES),
+        [appID_GUIDPREFIX_RTPS ^ appID] INTEGER (SIZE 4 BYTES),
+        [counter_GUIDPREFIX_RTPS ^ counter] INTEGER (SIZE 4 BYTES)
+    } (ENCODED BY CUSTOM)
+
+    [SUBMESSAGE_RTPS ^ SUBMESSAGE] ::= (DATAPSUB_RTPS | DATASUB_RTPS | ACKNACK_RTPS | HEARTBEAT_RTPS | INFO$DST_RTPS | INFO$TS_RTPS | DATAWSUB_RTPS |
+      DATARSUB_RTPS | GAP_RTPS) < transfer >
+        Callback ^ FULL_RTPS subMsg
+    </ transfer >
+
+    [DATASUB_RTPS ^ DATASUB] ::= SEQUENCE {
+        [kind_DATASUB_RTPS ^ kind] INTEGER (SIZE 1 BYTES),
+        [flags_DATASUB_RTPS ^ flags] INTEGER (SIZE 1 BYTES),
+        [nextHeader_DATASUB_RTPS ^ nextHeader] INTEGER (SIZE 2 BYTES),
+        [extraFlags_DATASUB_RTPS ^ extraFlags] INTEGER (SIZE 2 BYTES),
+        [qosOffset_DATASUB_RTPS ^ qosOffset] INTEGER (SIZE 2 BYTES),
+        [readerEnt_DATASUB_RTPS ^ readerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [writerEnt_DATASUB_RTPS ^ writerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [writerSEQ_DATASUB_RTPS ^ writerSEQ] INTEGER (SIZE 8 BYTES),
+        [inlineQos_DATASUB_RTPS ^ inlineQos] QOSPARM_RTPS (SIZE DEFINED) OPTIONAL,
+        [serializedData_DATASUB_RTPS ^ serializedData] OCTET STRING (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[kind_DATASUB_RTPS ^ kind] == 21}
+        Back {[writerEnt_DATASUB_RTPS.kind_ENTITYID_RTPS ^ writerEnt.kind] == 2 || [writerEnt_DATASUB_RTPS.kind_ENTITYID_RTPS ^ writerEnt.kind] == 3}
+        Forward {ENDIANNESS == [flags_DATASUB_RTPS ^ flags]& 1}
+        Forward {EXISTS ([inlineQos_DATASUB_RTPS ^ inlineQos]) == [flags_DATASUB_RTPS ^ flags]& 2}
+        Forward {LENGTH ([serializedData_DATASUB_RTPS ^ serializedData]) == ([nextHeader_DATASUB_RTPS ^ nextHeader]) ? [nextHeader_DATASUB_RTPS ^ nextHeader] -
+          (POS ([serializedData_DATASUB_RTPS ^ serializedData]) - POS ([extraFlags_DATASUB_RTPS ^ extraFlags])) : PDUREMAINING}
+        Callback FULL_RTPS subMsg
+    </ transfer >
+
+    [QOSPARM_RTPS ^ QOSPARM] ::= SEQUENCE {
+        [qos_QOSPARM_RTPS ^ qos] SET OF QOSPARMS_RTPS (SIZE CONSTRAINED),
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Forward {TERMINATE ([qos_QOSPARM_RTPS ^ qos]) == [PIDSENTINAL_RTPS ^ PIDSENTINAL]}
+    </ transfer >
+
+    [QOSPARMS_RTPS ^ QOSPARMS] ::= (PIDSTATUSINFO_RTPS | PIDKEYHASH_RTPS | PIDSENTINAL_RTPS)
+    [PIDSTATUSINFO_RTPS ^ PIDSTATUSINFO] ::= SEQUENCE {
+        [parameterKind_PIDSTATUSINFO_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDSTATUSINFO_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [flags_PIDSTATUSINFO_RTPS ^ flags] OCTET STRING (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[parameterKind_PIDSTATUSINFO_RTPS ^ parameterKind] == 113}
+        Forward {LENGTH ([flags_PIDSTATUSINFO_RTPS ^ flags]) == [parameterLength_PIDSTATUSINFO_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDKEYHASH_RTPS ^ PIDKEYHASH] ::= SEQUENCE {
+        [parameterKind_PIDKEYHASH_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDKEYHASH_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [guid_PIDKEYHASH_RTPS ^ guid] OCTET STRING (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[parameterKind_PIDKEYHASH_RTPS ^ parameterKind] == 112}
+        Forward {LENGTH ([guid_PIDKEYHASH_RTPS ^ guid]) == [parameterLength_PIDKEYHASH_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [TOPICS_RTPS ^ TOPICS] ::= SEQUENCE {
+        [encapsKind_TOPICS_RTPS ^ encapsKind] INTEGER (SIZE 2 BYTES) BIGENDIAN,
+        [encapsOpts_TOPICS_RTPS ^ encapsOpts] INTEGER (SIZE 2 BYTES) BIGENDIAN,
+        [topicData_TOPICS_RTPS ^ topicData] SET OF TOPICPARMS_RTPS (SIZE CONSTRAINED)
+    } < transfer >
+        Forward {TERMINATE ([topicData_TOPICS_RTPS ^ topicData]) == [PIDSENTINAL_RTPS ^ PIDSENTINAL]}
+    </ transfer >
+
+    [DATAWSUB_RTPS ^ DATAWSUB] ::= SEQUENCE {
+        [kind_DATAWSUB_RTPS ^ kind] INTEGER (SIZE 1 BYTES),
+        [flags_DATAWSUB_RTPS ^ flags] INTEGER (SIZE 1 BYTES),
+        [nextHeader_DATAWSUB_RTPS ^ nextHeader] INTEGER (SIZE 2 BYTES),
+        [extraFlags_DATAWSUB_RTPS ^ extraFlags] INTEGER (SIZE 2 BYTES),
+        [qosOffset_DATAWSUB_RTPS ^ qosOffset] INTEGER (SIZE 2 BYTES),
+        [readerEnt_DATAWSUB_RTPS ^ readerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [writerEnt_DATAWSUB_RTPS ^ writerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [writerSEQ_DATAWSUB_RTPS ^ writerSEQ] INTEGER (SIZE 8 BYTES),
+        [inlineQos_DATAWSUB_RTPS ^ inlineQos] QOSPARM_RTPS (SIZE DEFINED) OPTIONAL,
+        [serializedData_DATAWSUB_RTPS ^ serializedData] TOPICS_RTPS (SIZE DEFINED) OPTIONAL
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[kind_DATAWSUB_RTPS ^ kind] == 21}
+        Back {[writerEnt_DATAWSUB_RTPS.kind_ENTITYID_RTPS ^ writerEnt.kind] == 194}
+        Back {[writerEnt_DATAWSUB_RTPS.key_ENTITYID_RTPS ^ writerEnt.key] == 3}
+        Forward {ENDIANNESS == [flags_DATAWSUB_RTPS ^ flags]& 1}
+        Forward {EXISTS ([inlineQos_DATAWSUB_RTPS ^ inlineQos]) == [flags_DATAWSUB_RTPS ^ flags]& 2}
+        Forward {EXISTS ([serializedData_DATAWSUB_RTPS ^ serializedData]) == [flags_DATAWSUB_RTPS ^ flags]& 12}
+        Callback FULL_RTPS subMsg
+    </ transfer >
+
+    [TOPICPARMS_RTPS ^ TOPICPARMS] ::= (PIDTOPICNAME_RTPS | PIDTYPENAME_RTPS | PIDRELIABILITY_RTPS | PIDENDPOINTGUID_RTPS | PIDENDSECATTR_RTPS |
+      PIDMULTICASTLOCATOR_RTPS | PIDUNICASTLOCATOR_RTPS | PIDSENTINAL_RTPS | PIDUNKNOWN_RTPS | PIDACKKIND_RTPS | PIDRECVQUEUE_RTPS | PIDTIMEBASEDFILTER_RTPS |
+      PIDLIVELINESS_RTPS | PIDDURABILITY_RTPS | PIDDIRECTCOMMUNICATION_RTPS | PIDROLENAME_RTPS | PIDTOPICQUERYPUB_RTPS | PIDOWNERSHIP_RTPS |
+      PIDPRESENTATION_RTPS | PIDDESTINATIONORDER_RTPS | PIDDEADLINE_RTPS | PIDLATENCYBUDGET_RTPS | PIDENDPROPCHNGEPOCH_RTPS | PIDGROUPENTITYID_RTPS |
+      PIDENTITYVIRTUALGUID_RTPS | PIDSERVICEKIND_RTPS | PIDPROTOVERSION_RTPS | PIDPRODUCTVERSION_RTPS | PIDDISABLEPOSITIVEACKS_RTPS | PIDEXPECTSVIRTUALHB_RTPS |
+      PIDTYPECONSISTENCY_RTPS | PIDTYPEOBJECT_RTPS | PIDTYPECODE_RTPS | PIDVENDORID_RTPS | PIDENTITYNAME_RTPS | PIDEXPECTSACK_RTPS | PIDSENDQUEUESIZE_RTPS |
+      PIDOWNERSHIPSTRENGTH_RTPS | PIDPERSISTENCE_RTPS | PIDLIFESPAN_RTPS | PIDTYPEMAXSIZESERIALIZED_RTPS | PIDDURABILITYSERVICE_RTPS)
+    [PIDENDSECATTR_RTPS ^ PIDENDSECATTR] ::= SEQUENCE {
+        [parameterKind_PIDENDSECATTR_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDENDSECATTR_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [flags_PIDENDSECATTR_RTPS ^ flags] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDENDSECATTR_RTPS ^ parameterKind] == 32792}
+        Forward {LENGTH ([flags_PIDENDSECATTR_RTPS ^ flags]) == [parameterLength_PIDENDSECATTR_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDTOPICQUERYPUB_RTPS ^ PIDTOPICQUERYPUB] ::= SEQUENCE {
+        [parameterKind_PIDTOPICQUERYPUB_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDTOPICQUERYPUB_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [queryInfo_PIDTOPICQUERYPUB_RTPS ^ queryInfo] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDTOPICQUERYPUB_RTPS ^ parameterKind] == 32788}
+        Forward {LENGTH ([queryInfo_PIDTOPICQUERYPUB_RTPS ^ queryInfo]) == [parameterLength_PIDTOPICQUERYPUB_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDENDPROPCHNGEPOCH_RTPS ^ PIDENDPROPCHNGEPOCH] ::= SEQUENCE {
+        [parameterKind_PIDENDPROPCHNGEPOCH_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDENDPROPCHNGEPOCH_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [propChangeEpoch_PIDENDPROPCHNGEPOCH_RTPS ^ propChangeEpoch] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDENDPROPCHNGEPOCH_RTPS ^ parameterKind] == 32789}
+        Forward {LENGTH ([propChangeEpoch_PIDENDPROPCHNGEPOCH_RTPS ^ propChangeEpoch]) == [parameterLength_PIDENDPROPCHNGEPOCH_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDTYPEMAXSIZESERIALIZED_RTPS ^ PIDTYPEMAXSIZESERIALIZED] ::= SEQUENCE {
+        [parameterKind_PIDTYPEMAXSIZESERIALIZED_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDTYPEMAXSIZESERIALIZED_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [value_PIDTYPEMAXSIZESERIALIZED_RTPS ^ value] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDTYPEMAXSIZESERIALIZED_RTPS ^ parameterKind] == 96}
+        Forward {LENGTH ([value_PIDTYPEMAXSIZESERIALIZED_RTPS ^ value]) == [parameterLength_PIDTYPEMAXSIZESERIALIZED_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDLIFESPAN_RTPS ^ PIDLIFESPAN] ::= SEQUENCE {
+        [parameterKind_PIDLIFESPAN_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDLIFESPAN_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [leaseDuration_PIDLIFESPAN_RTPS ^ leaseDuration] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDLIFESPAN_RTPS ^ parameterKind] == 43}
+        Forward {LENGTH ([leaseDuration_PIDLIFESPAN_RTPS ^ leaseDuration]) == [parameterLength_PIDLIFESPAN_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDDURABILITYSERVICE_RTPS ^ PIDDURABILITYSERVICE] ::= SEQUENCE {
+        [parameterKind_PIDDURABILITYSERVICE_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDDURABILITYSERVICE_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [durabilityService_PIDDURABILITYSERVICE_RTPS ^ durabilityService] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDDURABILITYSERVICE_RTPS ^ parameterKind] == 30}
+        Forward {LENGTH ([durabilityService_PIDDURABILITYSERVICE_RTPS ^ durabilityService]) == [parameterLength_PIDDURABILITYSERVICE_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDPERSISTENCE_RTPS ^ PIDPERSISTENCE] ::= SEQUENCE {
+        [parameterKind_PIDPERSISTENCE_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDPERSISTENCE_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [leaseDuration_PIDPERSISTENCE_RTPS ^ leaseDuration] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDPERSISTENCE_RTPS ^ parameterKind] == 3}
+        Forward {LENGTH ([leaseDuration_PIDPERSISTENCE_RTPS ^ leaseDuration]) == [parameterLength_PIDPERSISTENCE_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDOWNERSHIPSTRENGTH_RTPS ^ PIDOWNERSHIPSTRENGTH] ::= SEQUENCE {
+        [parameterKind_PIDOWNERSHIPSTRENGTH_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDOWNERSHIPSTRENGTH_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [strength_PIDOWNERSHIPSTRENGTH_RTPS ^ strength] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDOWNERSHIPSTRENGTH_RTPS ^ parameterKind] == 6}
+        Forward {LENGTH ([strength_PIDOWNERSHIPSTRENGTH_RTPS ^ strength]) == [parameterLength_PIDOWNERSHIPSTRENGTH_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDSENDQUEUESIZE_RTPS ^ PIDSENDQUEUESIZE] ::= SEQUENCE {
+        [parameterKind_PIDSENDQUEUESIZE_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDSENDQUEUESIZE_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [queueSize_PIDSENDQUEUESIZE_RTPS ^ queueSize] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDSENDQUEUESIZE_RTPS ^ parameterKind] == 19}
+        Forward {LENGTH ([queueSize_PIDSENDQUEUESIZE_RTPS ^ queueSize]) == [parameterLength_PIDSENDQUEUESIZE_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDEXPECTSACK_RTPS ^ PIDEXPECTSACK] ::= SEQUENCE {
+        [parameterKind_PIDEXPECTSACK_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDEXPECTSACK_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [expectsAck_PIDEXPECTSACK_RTPS ^ expectsAck] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDEXPECTSACK_RTPS ^ parameterKind] == 16}
+        Forward {LENGTH ([expectsAck_PIDEXPECTSACK_RTPS ^ expectsAck]) == [parameterLength_PIDEXPECTSACK_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDTYPECODE_RTPS ^ PIDTYPECODE] ::= SEQUENCE {
+        [parameterKind_PIDTYPECODE_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDTYPECODE_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [typeObjectCode_PIDTYPECODE_RTPS ^ typeObjectCode] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDTYPECODE_RTPS ^ parameterKind] == 32772}
+        Forward {LENGTH ([typeObjectCode_PIDTYPECODE_RTPS ^ typeObjectCode]) == [parameterLength_PIDTYPECODE_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDTYPEOBJECT_RTPS ^ PIDTYPEOBJECT] ::= SEQUENCE {
+        [parameterKind_PIDTYPEOBJECT_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDTYPEOBJECT_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [typeObject_PIDTYPEOBJECT_RTPS ^ typeObject] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDTYPEOBJECT_RTPS ^ parameterKind] == 114}
+        Forward {LENGTH ([typeObject_PIDTYPEOBJECT_RTPS ^ typeObject]) == [parameterLength_PIDTYPEOBJECT_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDTYPECONSISTENCY_RTPS ^ PIDTYPECONSISTENCY] ::= SEQUENCE {
+        [parameterKind_PIDTYPECONSISTENCY_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDTYPECONSISTENCY_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [typeConsistencyKind_PIDTYPECONSISTENCY_RTPS ^ typeConsistencyKind] TYPECONSISTENCYKIND_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDTYPECONSISTENCY_RTPS ^ parameterKind] == 116}
+        Forward {LENGTH ([typeConsistencyKind_PIDTYPECONSISTENCY_RTPS ^ typeConsistencyKind]) == [parameterLength_PIDTYPECONSISTENCY_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [TYPECONSISTENCYKIND_RTPS ^ TYPECONSISTENCYKIND] ::= SEQUENCE {
+        [kind_TYPECONSISTENCYKIND_RTPS ^ kind] INTEGER (SIZE 2 BYTES)
+    }
+    [PIDEXPECTSVIRTUALHB_RTPS ^ PIDEXPECTSVIRTUALHB] ::= SEQUENCE {
+        [parameterKind_PIDEXPECTSVIRTUALHB_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDEXPECTSVIRTUALHB_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [expectsVirtualHB_PIDEXPECTSVIRTUALHB_RTPS ^ expectsVirtualHB] FLAG_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDEXPECTSVIRTUALHB_RTPS ^ parameterKind] == 32777}
+        Forward {LENGTH ([expectsVirtualHB_PIDEXPECTSVIRTUALHB_RTPS ^ expectsVirtualHB]) == [parameterLength_PIDEXPECTSVIRTUALHB_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDDISABLEPOSITIVEACKS_RTPS ^ PIDDISABLEPOSITIVEACKS] ::= SEQUENCE {
+        [parameterKind_PIDDISABLEPOSITIVEACKS_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDDISABLEPOSITIVEACKS_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [disablePositiveAcks_PIDDISABLEPOSITIVEACKS_RTPS ^ disablePositiveAcks] FLAG_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDDISABLEPOSITIVEACKS_RTPS ^ parameterKind] == 32773}
+        Forward {LENGTH ([disablePositiveAcks_PIDDISABLEPOSITIVEACKS_RTPS ^ disablePositiveAcks]) == [parameterLength_PIDDISABLEPOSITIVEACKS_RTPS ^
+          parameterLength]}
+    </ transfer >
+
+    [FLAG_RTPS ^ FLAG] ::= SEQUENCE {
+        [flag_FLAG_RTPS ^ flag] INTEGER (SIZE 1 BYTES)
+    }
+    [PIDSERVICEKIND_RTPS ^ PIDSERVICEKIND] ::= SEQUENCE {
+        [parameterKind_PIDSERVICEKIND_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDSERVICEKIND_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [serviceKind_PIDSERVICEKIND_RTPS ^ serviceKind] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDSERVICEKIND_RTPS ^ parameterKind] == 32771}
+        Forward {LENGTH ([serviceKind_PIDSERVICEKIND_RTPS ^ serviceKind]) == [parameterLength_PIDSERVICEKIND_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDENTITYVIRTUALGUID_RTPS ^ PIDENTITYVIRTUALGUID] ::= SEQUENCE {
+        [parameterKind_PIDENTITYVIRTUALGUID_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDENTITYVIRTUALGUID_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [virtualGuid_PIDENTITYVIRTUALGUID_RTPS ^ virtualGuid] VIRTUALGUID_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDENTITYVIRTUALGUID_RTPS ^ parameterKind] == 32770}
+        Forward {LENGTH ([virtualGuid_PIDENTITYVIRTUALGUID_RTPS ^ virtualGuid]) == [parameterLength_PIDENTITYVIRTUALGUID_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [VIRTUALGUID_RTPS ^ VIRTUALGUID] ::= SEQUENCE {
+        [guidPrefix_VIRTUALGUID_RTPS ^ guidPrefix] GUIDPREFIX_RTPS (SIZE DEFINED) BIGENDIAN,
+        [virtualGuidSuffix_VIRTUALGUID_RTPS ^ virtualGuidSuffix] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN
+    }
+    [PIDGROUPENTITYID_RTPS ^ PIDGROUPENTITYID] ::= SEQUENCE {
+        [parameterKind_PIDGROUPENTITYID_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDGROUPENTITYID_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [groupEntityId_PIDGROUPENTITYID_RTPS ^ groupEntityId] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN SLACK
+    } < transfer >
+        Back {[parameterKind_PIDGROUPENTITYID_RTPS ^ parameterKind] == 83}
+        Forward {LENGTH ([groupEntityId_PIDGROUPENTITYID_RTPS ^ groupEntityId]) == [parameterLength_PIDGROUPENTITYID_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDLATENCYBUDGET_RTPS ^ PIDLATENCYBUDGET] ::= SEQUENCE {
+        [parameterKind_PIDLATENCYBUDGET_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDLATENCYBUDGET_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [leaseDuration_PIDLATENCYBUDGET_RTPS ^ leaseDuration] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDLATENCYBUDGET_RTPS ^ parameterKind] == 39}
+        Forward {LENGTH ([leaseDuration_PIDLATENCYBUDGET_RTPS ^ leaseDuration]) == [parameterLength_PIDLATENCYBUDGET_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDDEADLINE_RTPS ^ PIDDEADLINE] ::= SEQUENCE {
+        [parameterKind_PIDDEADLINE_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDDEADLINE_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [leaseDuration_PIDDEADLINE_RTPS ^ leaseDuration] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDDEADLINE_RTPS ^ parameterKind] == 35}
+        Forward {LENGTH ([leaseDuration_PIDDEADLINE_RTPS ^ leaseDuration]) == [parameterLength_PIDDEADLINE_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDDESTINATIONORDER_RTPS ^ PIDDESTINATIONORDER] ::= SEQUENCE {
+        [parameterKind_PIDDESTINATIONORDER_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDDESTINATIONORDER_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [kind_PIDDESTINATIONORDER_RTPS ^ kind] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDDESTINATIONORDER_RTPS ^ parameterKind] == 37}
+        Forward {LENGTH ([kind_PIDDESTINATIONORDER_RTPS ^ kind]) == [parameterLength_PIDDESTINATIONORDER_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDPRESENTATION_RTPS ^ PIDPRESENTATION] ::= SEQUENCE {
+        [parameterKind_PIDPRESENTATION_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDPRESENTATION_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [presentation_PIDPRESENTATION_RTPS ^ presentation] PRESENTATION_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDPRESENTATION_RTPS ^ parameterKind] == 33}
+        Forward {LENGTH ([presentation_PIDPRESENTATION_RTPS ^ presentation]) == [parameterLength_PIDPRESENTATION_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PRESENTATION_RTPS ^ PRESENTATION] ::= SEQUENCE {
+        [accessScope_PRESENTATION_RTPS ^ accessScope] INTEGER (SIZE 4 BYTES),
+        [coherentAccess_PRESENTATION_RTPS ^ coherentAccess] INTEGER (SIZE 1 BYTES),
+        [orderedAccess_PRESENTATION_RTPS ^ orderedAccess] INTEGER (SIZE 1 BYTES)
+    }
+    [PIDOWNERSHIP_RTPS ^ PIDOWNERSHIP] ::= SEQUENCE {
+        [parameterKind_PIDOWNERSHIP_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDOWNERSHIP_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [kind_PIDOWNERSHIP_RTPS ^ kind] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDOWNERSHIP_RTPS ^ parameterKind] == 31}
+        Forward {LENGTH ([kind_PIDOWNERSHIP_RTPS ^ kind]) == [parameterLength_PIDOWNERSHIP_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDDIRECTCOMMUNICATION_RTPS ^ PIDDIRECTCOMMUNICATION] ::= SEQUENCE {
+        [parameterKind_PIDDIRECTCOMMUNICATION_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDDIRECTCOMMUNICATION_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [directCommunication_PIDDIRECTCOMMUNICATION_RTPS ^ directCommunication] DIRECTCOMMUNICATION_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDDIRECTCOMMUNICATION_RTPS ^ parameterKind] == 32785}
+        Forward {LENGTH ([directCommunication_PIDDIRECTCOMMUNICATION_RTPS ^ directCommunication]) == [parameterLength_PIDDIRECTCOMMUNICATION_RTPS ^
+          parameterLength]}
+    </ transfer >
+
+    [DIRECTCOMMUNICATION_RTPS ^ DIRECTCOMMUNICATION] ::= SEQUENCE {
+        [directCommunication_DIRECTCOMMUNICATION_RTPS ^ directCommunication] INTEGER (SIZE 1 BYTES)
+    }
+    [PIDDURABILITY_RTPS ^ PIDDURABILITY] ::= SEQUENCE {
+        [parameterKind_PIDDURABILITY_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDDURABILITY_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [durability_PIDDURABILITY_RTPS ^ durability] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDDURABILITY_RTPS ^ parameterKind] == 29}
+        Forward {LENGTH ([durability_PIDDURABILITY_RTPS ^ durability]) == [parameterLength_PIDDURABILITY_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDLIVELINESS_RTPS ^ PIDLIVELINESS] ::= SEQUENCE {
+        [parameterKind_PIDLIVELINESS_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDLIVELINESS_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [liveliness_PIDLIVELINESS_RTPS ^ liveliness] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDLIVELINESS_RTPS ^ parameterKind] == 27}
+        Forward {LENGTH ([liveliness_PIDLIVELINESS_RTPS ^ liveliness]) == [parameterLength_PIDLIVELINESS_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDTIMEBASEDFILTER_RTPS ^ PIDTIMEBASEDFILTER] ::= SEQUENCE {
+        [parameterKind_PIDTIMEBASEDFILTER_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDTIMEBASEDFILTER_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [leaseDuration_PIDTIMEBASEDFILTER_RTPS ^ leaseDuration] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDTIMEBASEDFILTER_RTPS ^ parameterKind] == 4}
+        Forward {LENGTH ([leaseDuration_PIDTIMEBASEDFILTER_RTPS ^ leaseDuration]) == [parameterLength_PIDTIMEBASEDFILTER_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDRECVQUEUE_RTPS ^ PIDRECVQUEUE] ::= SEQUENCE {
+        [parameterKind_PIDRECVQUEUE_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDRECVQUEUE_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [queueSize_PIDRECVQUEUE_RTPS ^ queueSize] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDRECVQUEUE_RTPS ^ parameterKind] == 24}
+        Forward {LENGTH ([queueSize_PIDRECVQUEUE_RTPS ^ queueSize]) == [parameterLength_PIDRECVQUEUE_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDACKKIND_RTPS ^ PIDACKKIND] ::= SEQUENCE {
+        [parameterKind_PIDACKKIND_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDACKKIND_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [ackKind_PIDACKKIND_RTPS ^ ackKind] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDACKKIND_RTPS ^ parameterKind] == 32779}
+        Forward {LENGTH ([ackKind_PIDACKKIND_RTPS ^ ackKind]) == [parameterLength_PIDACKKIND_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDTOPICNAME_RTPS ^ PIDTOPICNAME] ::= SEQUENCE {
+        [parameterKind_PIDTOPICNAME_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDTOPICNAME_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [topicName_PIDTOPICNAME_RTPS ^ topicName] NESTEDSTRING_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDTOPICNAME_RTPS ^ parameterKind] == 5}
+        Forward {LENGTH ([topicName_PIDTOPICNAME_RTPS ^ topicName]) == [parameterLength_PIDTOPICNAME_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDUNKNOWN_RTPS ^ PIDUNKNOWN] ::= SEQUENCE {
+        [parameterKind_PIDUNKNOWN_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [slackBytes_PIDUNKNOWN_RTPS ^ slackBytes] OCTET STRING (SIZE 18 BYTES)
+    } < transfer >
+        Back {[parameterKind_PIDUNKNOWN_RTPS ^ parameterKind] == 45058}
+    </ transfer >
+
+    [PIDTYPENAME_RTPS ^ PIDTYPENAME] ::= SEQUENCE {
+        [parameterKind_PIDTYPENAME_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDTYPENAME_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [typeName_PIDTYPENAME_RTPS ^ typeName] NESTEDSTRING_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDTYPENAME_RTPS ^ parameterKind] == 7}
+        Forward {LENGTH ([typeName_PIDTYPENAME_RTPS ^ typeName]) == [parameterLength_PIDTYPENAME_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [NESTEDSTRING_RTPS ^ NESTEDSTRING] ::= SEQUENCE {
+        [nameLength_NESTEDSTRING_RTPS ^ nameLength] INTEGER (SIZE 4 BYTES),
+        [name_NESTEDSTRING_RTPS ^ name] OCTET STRING (SIZE CONSTRAINED),
+    } < transfer >
+        Forward {LENGTH ([name_NESTEDSTRING_RTPS ^ name]) == [nameLength_NESTEDSTRING_RTPS ^ nameLength]}
+    </ transfer >
+
+    [PIDRELIABILITY_RTPS ^ PIDRELIABILITY] ::= SEQUENCE {
+        [parameterKind_PIDRELIABILITY_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDRELIABILITY_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [reliabilityQOS_PIDRELIABILITY_RTPS ^ reliabilityQOS] INTEGER (SIZE 4 BYTES),
+        [slack_PIDRELIABILITY_RTPS ^ slack] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDRELIABILITY_RTPS ^ parameterKind] == 26}
+        Forward {LENGTH ([slack_PIDRELIABILITY_RTPS ^ slack]) == [parameterLength_PIDRELIABILITY_RTPS ^ parameterLength] - SIZEOF ([
+          reliabilityQOS_PIDRELIABILITY_RTPS ^ reliabilityQOS])}
+    </ transfer >
+
+    [PIDENDPOINTGUID_RTPS ^ PIDENDPOINTGUID] ::= SEQUENCE {
+        [parameterKind_PIDENDPOINTGUID_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDENDPOINTGUID_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [participantGUID_PIDENDPOINTGUID_RTPS ^ participantGUID] GUIDPREFIX_RTPS (SIZE DEFINED) BIGENDIAN,
+        [entityID_PIDENDPOINTGUID_RTPS ^ entityID] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN
+    } < transfer >
+        Back {[parameterKind_PIDENDPOINTGUID_RTPS ^ parameterKind] == 90}
+    </ transfer >
+
+    [PIDMULTICASTLOCATOR_RTPS ^ PIDMULTICASTLOCATOR] ::= SEQUENCE {
+        [parameterKind_PIDMULTICASTLOCATOR_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDMULTICASTLOCATOR_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [locator_PIDMULTICASTLOCATOR_RTPS ^ locator] LOCATOR_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDMULTICASTLOCATOR_RTPS ^ parameterKind] == 48}
+        Forward {LENGTH ([locator_PIDMULTICASTLOCATOR_RTPS ^ locator]) == [parameterLength_PIDMULTICASTLOCATOR_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDUNICASTLOCATOR_RTPS ^ PIDUNICASTLOCATOR] ::= SEQUENCE {
+        [parameterKind_PIDUNICASTLOCATOR_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDUNICASTLOCATOR_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [locator_PIDUNICASTLOCATOR_RTPS ^ locator] LOCATOR_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDUNICASTLOCATOR_RTPS ^ parameterKind] == 47}
+        Forward {LENGTH ([locator_PIDUNICASTLOCATOR_RTPS ^ locator]) == [parameterLength_PIDUNICASTLOCATOR_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PARTICIPANTS_RTPS ^ PARTICIPANTS] ::= SEQUENCE {
+        [encapsKind_PARTICIPANTS_RTPS ^ encapsKind] INTEGER (SIZE 2 BYTES) BIGENDIAN,
+        [encapsOpts_PARTICIPANTS_RTPS ^ encapsOpts] INTEGER (SIZE 2 BYTES) BIGENDIAN,
+        [particData_PARTICIPANTS_RTPS ^ particData] SET OF PARTICIPANTPARAMS_RTPS (SIZE CONSTRAINED)
+    } < transfer >
+        Forward {TERMINATE ([particData_PARTICIPANTS_RTPS ^ particData]) == [PIDSENTINAL_RTPS ^ PIDSENTINAL]}
+    </ transfer >
+
+    [DATAPSUB_RTPS ^ DATAPSUB] ::= SEQUENCE {
+        [kind_DATAPSUB_RTPS ^ kind] INTEGER (SIZE 1 BYTES),
+        [flags_DATAPSUB_RTPS ^ flags] INTEGER (SIZE 1 BYTES),
+        [nextHeader_DATAPSUB_RTPS ^ nextHeader] INTEGER (SIZE 2 BYTES),
+        [extraFlags_DATAPSUB_RTPS ^ extraFlags] INTEGER (SIZE 2 BYTES),
+        [qosOffset_DATAPSUB_RTPS ^ qosOffset] INTEGER (SIZE 2 BYTES),
+        [readerEnt_DATAPSUB_RTPS ^ readerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [writerEnt_DATAPSUB_RTPS ^ writerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [writerSEQ_DATAPSUB_RTPS ^ writerSEQ] INTEGER (SIZE 8 BYTES),
+        [inlineQos_DATAPSUB_RTPS ^ inlineQos] QOSPARM_RTPS (SIZE DEFINED) OPTIONAL,
+        [serializedData_DATAPSUB_RTPS ^ serializedData] PARTICIPANTS_RTPS (SIZE DEFINED) OPTIONAL
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[kind_DATAPSUB_RTPS ^ kind] == 21}
+        Back {[writerEnt_DATAPSUB_RTPS.kind_ENTITYID_RTPS ^ writerEnt.kind] == 194}
+        Back {[writerEnt_DATAPSUB_RTPS.key_ENTITYID_RTPS ^ writerEnt.key] == 256}
+        Forward {ENDIANNESS == [flags_DATAPSUB_RTPS ^ flags]& 1}
+        Forward {EXISTS ([inlineQos_DATAPSUB_RTPS ^ inlineQos]) == [flags_DATAPSUB_RTPS ^ flags]& 2}
+        Forward {EXISTS ([serializedData_DATAPSUB_RTPS ^ serializedData]) == [flags_DATAPSUB_RTPS ^ flags]& 12}
+        Callback FULL_RTPS subMsg
+    </ transfer >
+
+    [DATARSUB_RTPS ^ DATARSUB] ::= SEQUENCE {
+        [kind_DATARSUB_RTPS ^ kind] INTEGER (SIZE 1 BYTES),
+        [flags_DATARSUB_RTPS ^ flags] INTEGER (SIZE 1 BYTES),
+        [nextHeader_DATARSUB_RTPS ^ nextHeader] INTEGER (SIZE 2 BYTES),
+        [extraFlags_DATARSUB_RTPS ^ extraFlags] INTEGER (SIZE 2 BYTES),
+        [qosOffset_DATARSUB_RTPS ^ qosOffset] INTEGER (SIZE 2 BYTES),
+        [readerEnt_DATARSUB_RTPS ^ readerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [writerEnt_DATARSUB_RTPS ^ writerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [writerSEQ_DATARSUB_RTPS ^ writerSEQ] INTEGER (SIZE 8 BYTES),
+        [inlineQos_DATARSUB_RTPS ^ inlineQos] QOSPARM_RTPS (SIZE DEFINED) OPTIONAL,
+        [serializedData_DATARSUB_RTPS ^ serializedData] TOPICS_RTPS (SIZE DEFINED) OPTIONAL
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[kind_DATARSUB_RTPS ^ kind] == 21}
+        Back {[writerEnt_DATARSUB_RTPS.kind_ENTITYID_RTPS ^ writerEnt.kind] == 194}
+        Back {[writerEnt_DATARSUB_RTPS.key_ENTITYID_RTPS ^ writerEnt.key] == 4}
+        Forward {ENDIANNESS == [flags_DATARSUB_RTPS ^ flags]& 1}
+        Forward {EXISTS ([inlineQos_DATARSUB_RTPS ^ inlineQos]) == [flags_DATARSUB_RTPS ^ flags]& 2}
+        Forward {EXISTS ([serializedData_DATARSUB_RTPS ^ serializedData]) == [flags_DATARSUB_RTPS ^ flags]& 12}
+        Callback FULL_RTPS subMsg
+    </ transfer >
+
+    [INFO$DST_RTPS ^ INFO$DST] ::= SEQUENCE {
+        [kind_INFO$DST_RTPS ^ kind] INTEGER (SIZE 1 BYTES),
+        [flags_INFO$DST_RTPS ^ flags] INTEGER (SIZE 1 BYTES),
+        [nextHeader_INFO$DST_RTPS ^ nextHeader] INTEGER (SIZE 2 BYTES),
+        [guidPfx_INFO$DST_RTPS ^ guidPfx] GUIDPREFIX_RTPS (SIZE DEFINED) BIGENDIAN
+    } < transfer >
+        Back {[kind_INFO$DST_RTPS ^ kind] == 14}
+        Forward {ENDIANNESS == [flags_INFO$DST_RTPS ^ flags]& 1}
+        Callback FULL_RTPS subMsg
+    </ transfer >
+
+    [INFO$TS_RTPS ^ INFO$TS] ::= SEQUENCE {
+        [kind_INFO$TS_RTPS ^ kind] INTEGER (SIZE 1 BYTES),
+        [flags_INFO$TS_RTPS ^ flags] INTEGER (SIZE 1 BYTES),
+        [nextHeader_INFO$TS_RTPS ^ nextHeader] INTEGER (SIZE 2 BYTES),
+        [timeStamp_INFO$TS_RTPS ^ timeStamp] OCTET STRING (SIZE 8 BYTES)
+    } < transfer >
+        Back {[kind_INFO$TS_RTPS ^ kind] == 9}
+        Forward {ENDIANNESS == [flags_INFO$TS_RTPS ^ flags]& 1}
+        Callback FULL_RTPS subMsg
+    </ transfer >
+
+    [ACKNACK_RTPS ^ ACKNACK] ::= SEQUENCE {
+        [kind_ACKNACK_RTPS ^ kind] INTEGER (SIZE 1 BYTES),
+        [flags_ACKNACK_RTPS ^ flags] INTEGER (SIZE 1 BYTES),
+        [nextHeader_ACKNACK_RTPS ^ nextHeader] INTEGER (SIZE 2 BYTES),
+        [readerEnt_ACKNACK_RTPS ^ readerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [writerEnt_ACKNACK_RTPS ^ writerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [readerSN_ACKNACK_RTPS ^ readerSN] SNSTATE_RTPS (SIZE DEFINED),
+        [counter_ACKNACK_RTPS ^ counter] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {[kind_ACKNACK_RTPS ^ kind] == 6}
+        Forward {ENDIANNESS == [flags_ACKNACK_RTPS ^ flags]& 1}
+        Callback FULL_RTPS subMsg
+    </ transfer >
+
+    [HEARTBEAT_RTPS ^ HEARTBEAT] ::= SEQUENCE {
+        [kind_HEARTBEAT_RTPS ^ kind] INTEGER (SIZE 1 BYTES),
+        [flags_HEARTBEAT_RTPS ^ flags] INTEGER (SIZE 1 BYTES),
+        [nextHeader_HEARTBEAT_RTPS ^ nextHeader] INTEGER (SIZE 2 BYTES),
+        [readerEnt_HEARTBEAT_RTPS ^ readerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [writerEnt_HEARTBEAT_RTPS ^ writerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [firstSeq_HEARTBEAT_RTPS ^ firstSeq] OCTET STRING (SIZE 8 BYTES),
+        [lastSeq_HEARTBEAT_RTPS ^ lastSeq] OCTET STRING (SIZE 8 BYTES),
+        [count_HEARTBEAT_RTPS ^ count] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {[kind_HEARTBEAT_RTPS ^ kind] == 7}
+        Forward {ENDIANNESS == [flags_HEARTBEAT_RTPS ^ flags]& 1}
+        Callback FULL_RTPS subMsg
+    </ transfer >
+
+    [GAP_RTPS ^ GAP] ::= SEQUENCE {
+        [kind_GAP_RTPS ^ kind] INTEGER (SIZE 1 BYTES),
+        [flags_GAP_RTPS ^ flags] INTEGER (SIZE 1 BYTES),
+        [nextHeader_GAP_RTPS ^ nextHeader] INTEGER (SIZE 2 BYTES),
+        [readerEnt_GAP_RTPS ^ readerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [writerEnt_GAP_RTPS ^ writerEnt] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN,
+        [gapStart_GAP_RTPS ^ gapStart] INTEGER (SIZE 8 BYTES),
+        [snState_GAP_RTPS ^ snState] SNSTATE_RTPS (SIZE DEFINED)
+    } < transfer >
+        Back {[kind_GAP_RTPS ^ kind] == 8}
+        Forward {ENDIANNESS == [flags_GAP_RTPS ^ flags]& 1}
+        Callback FULL_RTPS subMsg
+    </ transfer >
+
+    [PARTICIPANTPARAMS_RTPS ^ PARTICIPANTPARAMS] ::= (PIDPROTOVERSION_RTPS | PIDPARTICIPANTGUID_RTPS | PIDVENDORID_RTPS | PIDPARTICIPANTBUILTENDPOINTS_RTPS |
+      PIDBUILTINENDPOINTSET_RTPS | PIDMETATRAFFICUNILOCATOR_RTPS | PIDDEFMULTILOCATOR_RTPS | PIDPARTICIPANTLIVECOUNT_RTPS | PIDPARTICIPANTLEASE_RTPS |
+      PIDREACHLEASE_RTPS | PIDSENTINAL_RTPS | PIDDEFUNILOCATOR_RTPS | PIDVENDORBUILTINENDPOINTSET_RTPS | PIDSERVICEKIND_RTPS | PIDMETATRAFFICMULTILOCATOR_RTPS |
+      PIDPROPERTYLIST_RTPS | PIDENTITYNAME_RTPS | PIDROLENAME_RTPS | PIDPEERHOSTEPOCH_RTPS | PIDDOMAINID_RTPS | PIDTRANSPORTINFOLIST_RTPS |
+      PIDPRODUCTVERSION_RTPS)
+    [PIDREACHLEASE_RTPS ^ PIDREACHLEASE] ::= SEQUENCE {
+        [parameterKind_PIDREACHLEASE_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDREACHLEASE_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [duration_PIDREACHLEASE_RTPS ^ duration] LEASEDURATION_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDREACHLEASE_RTPS ^ parameterKind] == 32790}
+        Forward {LENGTH ([duration_PIDREACHLEASE_RTPS ^ duration]) == [parameterLength_PIDREACHLEASE_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDVENDORBUILTINENDPOINTSET_RTPS ^ PIDVENDORBUILTINENDPOINTSET] ::= SEQUENCE {
+        [parameterKind_PIDVENDORBUILTINENDPOINTSET_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDVENDORBUILTINENDPOINTSET_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [flags_PIDVENDORBUILTINENDPOINTSET_RTPS ^ flags] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {[parameterKind_PIDVENDORBUILTINENDPOINTSET_RTPS ^ parameterKind] == 32791}
+    </ transfer >
+
+    [PIDPRODUCTVERSION_RTPS ^ PIDPRODUCTVERSION] ::= SEQUENCE {
+        [parameterKind_PIDPRODUCTVERSION_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDPRODUCTVERSION_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [productVersion_PIDPRODUCTVERSION_RTPS ^ productVersion] PRODUCTVERSION_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDPRODUCTVERSION_RTPS ^ parameterKind] == 32768}
+        Forward {LENGTH ([productVersion_PIDPRODUCTVERSION_RTPS ^ productVersion]) == [parameterLength_PIDPRODUCTVERSION_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PRODUCTVERSION_RTPS ^ PRODUCTVERSION] ::= SEQUENCE {
+        [major_PRODUCTVERSION_RTPS ^ major] INTEGER (SIZE 1 BYTES),
+        [minor_PRODUCTVERSION_RTPS ^ minor] INTEGER (SIZE 1 BYTES),
+        [release_PRODUCTVERSION_RTPS ^ release] INTEGER (SIZE 1 BYTES),
+        [revision_PRODUCTVERSION_RTPS ^ revision] INTEGER (SIZE 1 BYTES)
+    }
+    [PIDTRANSPORTINFOLIST_RTPS ^ PIDTRANSPORTINFOLIST] ::= SEQUENCE {
+        [parameterKind_PIDTRANSPORTINFOLIST_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDTRANSPORTINFOLIST_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [transports_PIDTRANSPORTINFOLIST_RTPS ^ transports] TRANSPORTS_RTPS (SIZE DEFINED)
+    } < transfer >
+        Back {[parameterKind_PIDTRANSPORTINFOLIST_RTPS ^ parameterKind] == 32784}
+        Forward {LENGTH ([transports_PIDTRANSPORTINFOLIST_RTPS ^ transports]) == [parameterLength_PIDTRANSPORTINFOLIST_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [TRANSPORTS_RTPS ^ TRANSPORTS] ::= SEQUENCE {
+        [transportNum_TRANSPORTS_RTPS ^ transportNum] INTEGER (SIZE 4 BYTES),
+        [info_TRANSPORTS_RTPS ^ info] SET OF TRANSPORTINFO_RTPS (SIZE CONSTRAINED)
+    } < transfer >
+        Forward {CARDINALITY ([info_TRANSPORTS_RTPS ^ info]) == [transportNum_TRANSPORTS_RTPS ^ transportNum]}
+    </ transfer >
+
+    [TRANSPORTINFO_RTPS ^ TRANSPORTINFO] ::= SEQUENCE {
+        [classID_TRANSPORTINFO_RTPS ^ classID] INTEGER (SIZE 4 BYTES),
+        [messageSizeMax_TRANSPORTINFO_RTPS ^ messageSizeMax] INTEGER (SIZE 4 BYTES)
+    }
+    [PIDDOMAINID_RTPS ^ PIDDOMAINID] ::= SEQUENCE {
+        [parameterKind_PIDDOMAINID_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDDOMAINID_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [domainId_PIDDOMAINID_RTPS ^ domainId] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDDOMAINID_RTPS ^ parameterKind] == 32783}
+        Forward {LENGTH ([domainId_PIDDOMAINID_RTPS ^ domainId]) == [parameterLength_PIDDOMAINID_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDPEERHOSTEPOCH_RTPS ^ PIDPEERHOSTEPOCH] ::= SEQUENCE {
+        [parameterKind_PIDPEERHOSTEPOCH_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDPEERHOSTEPOCH_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [hostEpoch_PIDPEERHOSTEPOCH_RTPS ^ hostEpoch] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[parameterKind_PIDPEERHOSTEPOCH_RTPS ^ parameterKind] == 32782}
+        Forward {LENGTH ([hostEpoch_PIDPEERHOSTEPOCH_RTPS ^ hostEpoch]) == [parameterLength_PIDPEERHOSTEPOCH_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDROLENAME_RTPS ^ PIDROLENAME] ::= SEQUENCE {
+        [parameterKind_PIDROLENAME_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDROLENAME_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [roleName_PIDROLENAME_RTPS ^ roleName] NESTEDSTRING_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDROLENAME_RTPS ^ parameterKind] == 32778}
+        Forward {LENGTH ([roleName_PIDROLENAME_RTPS ^ roleName]) == [parameterLength_PIDROLENAME_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDENTITYNAME_RTPS ^ PIDENTITYNAME] ::= SEQUENCE {
+        [parameterKind_PIDENTITYNAME_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDENTITYNAME_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [entityName_PIDENTITYNAME_RTPS ^ entityName] NESTEDSTRING_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDENTITYNAME_RTPS ^ parameterKind] == 98}
+        Forward {LENGTH ([entityName_PIDENTITYNAME_RTPS ^ entityName]) == [parameterLength_PIDENTITYNAME_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDPROPERTYLIST_RTPS ^ PIDPROPERTYLIST] ::= SEQUENCE {
+        [parameterKind_PIDPROPERTYLIST_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDPROPERTYLIST_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [properties_PIDPROPERTYLIST_RTPS ^ properties] PROPERTYLIST_RTPS (SIZE DEFINED)
+    } < transfer >
+        Back {[parameterKind_PIDPROPERTYLIST_RTPS ^ parameterKind] == 89}
+        Forward {LENGTH ([properties_PIDPROPERTYLIST_RTPS ^ properties]) == [parameterLength_PIDPROPERTYLIST_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PROPERTYLIST_RTPS ^ PROPERTYLIST] ::= SEQUENCE {
+        [numProperties_PROPERTYLIST_RTPS ^ numProperties] INTEGER (SIZE 4 BYTES),
+        [listt_PROPERTYLIST_RTPS ^ listt] SET OF PROPERTY_RTPS (SIZE CONSTRAINED)
+    } < transfer >
+        Forward {CARDINALITY ([listt_PROPERTYLIST_RTPS ^ listt]) == [numProperties_PROPERTYLIST_RTPS ^ numProperties]}
+    </ transfer >
+
+    [PROPERTY_RTPS ^ PROPERTY] ::= SEQUENCE {
+        [name_PROPERTY_RTPS ^ name] NESTEDSTRING_RTPS (SIZE DEFINED) SLACK MOD 4,
+        [value_PROPERTY_RTPS ^ value] NESTEDSTRING_RTPS (SIZE DEFINED) SLACK MOD 4
+    }
+    [PIDPROTOVERSION_RTPS ^ PIDPROTOVERSION] ::= SEQUENCE {
+        [parameterKind_PIDPROTOVERSION_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDPROTOVERSION_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [protocolVersion_PIDPROTOVERSION_RTPS ^ protocolVersion] PROTOCOLVERSION_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDPROTOVERSION_RTPS ^ parameterKind] == 21}
+        Forward {LENGTH ([protocolVersion_PIDPROTOVERSION_RTPS ^ protocolVersion]) == [parameterLength_PIDPROTOVERSION_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PROTOCOLVERSION_RTPS ^ PROTOCOLVERSION] ::= SEQUENCE {
+        [major_PROTOCOLVERSION_RTPS ^ major] INTEGER (SIZE 1 BYTES),
+        [minor_PROTOCOLVERSION_RTPS ^ minor] INTEGER (SIZE 1 BYTES)
+    }
+    [PIDPARTICIPANTGUID_RTPS ^ PIDPARTICIPANTGUID] ::= SEQUENCE {
+        [parameterKind_PIDPARTICIPANTGUID_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDPARTICIPANTGUID_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [participantGuid_PIDPARTICIPANTGUID_RTPS ^ participantGuid] PARTICIPANTGUID_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDPARTICIPANTGUID_RTPS ^ parameterKind] == 80}
+        Forward {LENGTH ([participantGuid_PIDPARTICIPANTGUID_RTPS ^ participantGuid]) == [parameterLength_PIDPARTICIPANTGUID_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PARTICIPANTGUID_RTPS ^ PARTICIPANTGUID] ::= SEQUENCE {
+        [guid_PARTICIPANTGUID_RTPS ^ guid] GUIDPREFIX_RTPS (SIZE DEFINED) BIGENDIAN,
+        [entityID_PARTICIPANTGUID_RTPS ^ entityID] ENTITYID_RTPS (SIZE DEFINED) BIGENDIAN
+    }
+    [PIDVENDORID_RTPS ^ PIDVENDORID] ::= SEQUENCE {
+        [parameterKind_PIDVENDORID_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDVENDORID_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [vendor_PIDVENDORID_RTPS ^ vendor] VENDORID_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDVENDORID_RTPS ^ parameterKind] == 22}
+        Forward {LENGTH ([vendor_PIDVENDORID_RTPS ^ vendor]) == [parameterLength_PIDVENDORID_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [VENDORID_RTPS ^ VENDORID] ::= SEQUENCE {
+        [vendorID_VENDORID_RTPS ^ vendorID] INTEGER (SIZE 2 BYTES)
+    }
+    [PIDPARTICIPANTBUILTENDPOINTS_RTPS ^ PIDPARTICIPANTBUILTENDPOINTS] ::= SEQUENCE {
+        [parameterKind_PIDPARTICIPANTBUILTENDPOINTS_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDPARTICIPANTBUILTENDPOINTS_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [builtIn_PIDPARTICIPANTBUILTENDPOINTS_RTPS ^ builtIn] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {[parameterKind_PIDPARTICIPANTBUILTENDPOINTS_RTPS ^ parameterKind] == 68}
+    </ transfer >
+
+    [PIDBUILTINENDPOINTSET_RTPS ^ PIDBUILTINENDPOINTSET] ::= SEQUENCE {
+        [parameterKind_PIDBUILTINENDPOINTSET_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDBUILTINENDPOINTSET_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [builtIn_PIDBUILTINENDPOINTSET_RTPS ^ builtIn] FLAGS_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDBUILTINENDPOINTSET_RTPS ^ parameterKind] == 88}
+        Forward {LENGTH ([builtIn_PIDBUILTINENDPOINTSET_RTPS ^ builtIn]) == [parameterLength_PIDBUILTINENDPOINTSET_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [FLAGS_RTPS ^ FLAGS] ::= SEQUENCE {
+        [flags_FLAGS_RTPS ^ flags] INTEGER (SIZE 4 BYTES)
+    }
+    [PIDMETATRAFFICUNILOCATOR_RTPS ^ PIDMETATRAFFICUNILOCATOR] ::= SEQUENCE {
+        [parameterKind_PIDMETATRAFFICUNILOCATOR_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDMETATRAFFICUNILOCATOR_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [locator_PIDMETATRAFFICUNILOCATOR_RTPS ^ locator] LOCATOR_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDMETATRAFFICUNILOCATOR_RTPS ^ parameterKind] == 50}
+        Forward {LENGTH ([locator_PIDMETATRAFFICUNILOCATOR_RTPS ^ locator]) == [parameterLength_PIDMETATRAFFICUNILOCATOR_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDMETATRAFFICMULTILOCATOR_RTPS ^ PIDMETATRAFFICMULTILOCATOR] ::= SEQUENCE {
+        [parameterKind_PIDMETATRAFFICMULTILOCATOR_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDMETATRAFFICMULTILOCATOR_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [locator_PIDMETATRAFFICMULTILOCATOR_RTPS ^ locator] LOCATOR_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDMETATRAFFICMULTILOCATOR_RTPS ^ parameterKind] == 51}
+        Forward {LENGTH ([locator_PIDMETATRAFFICMULTILOCATOR_RTPS ^ locator]) == [parameterLength_PIDMETATRAFFICMULTILOCATOR_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDDEFUNILOCATOR_RTPS ^ PIDDEFUNILOCATOR] ::= SEQUENCE {
+        [parameterKind_PIDDEFUNILOCATOR_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDDEFUNILOCATOR_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [locator_PIDDEFUNILOCATOR_RTPS ^ locator] LOCATOR_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDDEFUNILOCATOR_RTPS ^ parameterKind] == 49}
+        Forward {LENGTH ([locator_PIDDEFUNILOCATOR_RTPS ^ locator]) == [parameterLength_PIDDEFUNILOCATOR_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [PIDDEFMULTILOCATOR_RTPS ^ PIDDEFMULTILOCATOR] ::= SEQUENCE {
+        [parameterKind_PIDDEFMULTILOCATOR_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDDEFMULTILOCATOR_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [locator_PIDDEFMULTILOCATOR_RTPS ^ locator] LOCATOR_RTPS (SIZE DEFINED)
+    } < transfer >
+        Back {[parameterKind_PIDDEFMULTILOCATOR_RTPS ^ parameterKind] == 72}
+    </ transfer >
+
+    [LOCATOR_RTPS ^ LOCATOR] ::= SEQUENCE {
+        [kind_LOCATOR_RTPS ^ kind] INTEGER (SIZE 4 BYTES),
+        [port_LOCATOR_RTPS ^ port] INTEGER (SIZE 4 BYTES),
+        [address_LOCATOR_RTPS ^ address] OCTET STRING (SIZE 16 BYTES)
+    }
+    [PIDPARTICIPANTLIVECOUNT_RTPS ^ PIDPARTICIPANTLIVECOUNT] ::= SEQUENCE {
+        [parameterKind_PIDPARTICIPANTLIVECOUNT_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDPARTICIPANTLIVECOUNT_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [manualLiveCount_PIDPARTICIPANTLIVECOUNT_RTPS ^ manualLiveCount] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {[parameterKind_PIDPARTICIPANTLIVECOUNT_RTPS ^ parameterKind] == 52}
+    </ transfer >
+
+    [PIDPARTICIPANTLEASE_RTPS ^ PIDPARTICIPANTLEASE] ::= SEQUENCE {
+        [parameterKind_PIDPARTICIPANTLEASE_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDPARTICIPANTLEASE_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES),
+        [duration_PIDPARTICIPANTLEASE_RTPS ^ duration] LEASEDURATION_RTPS (SIZE DEFINED) SLACK
+    } < transfer >
+        Back {[parameterKind_PIDPARTICIPANTLEASE_RTPS ^ parameterKind] == 2}
+        Forward {LENGTH ([duration_PIDPARTICIPANTLEASE_RTPS ^ duration]) == [parameterLength_PIDPARTICIPANTLEASE_RTPS ^ parameterLength]}
+    </ transfer >
+
+    [LEASEDURATION_RTPS ^ LEASEDURATION] ::= SEQUENCE {
+        [seconds_LEASEDURATION_RTPS ^ seconds] INTEGER (SIZE 4 BYTES),
+        [fraction_LEASEDURATION_RTPS ^ fraction] INTEGER (SIZE 4 BYTES)
+    }
+    [PIDSENTINAL_RTPS ^ PIDSENTINAL] ::= SEQUENCE {
+        [parameterKind_PIDSENTINAL_RTPS ^ parameterKind] INTEGER (SIZE 2 BYTES),
+        [parameterLength_PIDSENTINAL_RTPS ^ parameterLength] INTEGER (SIZE 2 BYTES)
+    } < transfer >
+        Back {[parameterKind_PIDSENTINAL_RTPS ^ parameterKind] == 1}
+    </ transfer >
+
+    [ENTITYID_RTPS ^ ENTITYID] ::= SEQUENCE {
+        [key_ENTITYID_RTPS ^ key] INTEGER (SIZE 3 BYTES),
+        [kind_ENTITYID_RTPS ^ kind] INTEGER (SIZE 1 BYTES)
+    } (ENCODED BY CUSTOM)
+
+    [SNSTATE_RTPS ^ SNSTATE] ::= SEQUENCE {
+        [bitmapBase_SNSTATE_RTPS ^ bitmapBase] OCTET STRING (SIZE 8 BYTES),
+        [nmBits_SNSTATE_RTPS ^ nmBits] INTEGER (SIZE 4 BYTES),
+        [bitmap_SNSTATE_RTPS ^ bitmap] SLACK_RTPS (SIZE DEFINED) OPTIONAL
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Forward {EXISTS ([bitmap_SNSTATE_RTPS ^ bitmap]) == [nmBits_SNSTATE_RTPS ^ nmBits]& 15}
+    </ transfer >
+
+    [SLACK_RTPS ^ SLACK] ::= SEQUENCE {
+        [slack_SLACK_RTPS ^ slack] OCTET STRING (SIZE 4 BYTES)
+    } (ENCODED BY CUSTOM)
+
+END

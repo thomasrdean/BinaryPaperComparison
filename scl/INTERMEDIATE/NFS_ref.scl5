@@ -1,0 +1,508 @@
+NFS DEFINITIONS ::= BEGIN
+    EXPORTS PDU_NFS;
+    [timeval_NFS ^ timeval] ::= SEQUENCE {
+        [seconds_timeval_NFS ^ seconds] INTEGER (SIZE 2 BYTES),
+        [useconds_timeval_NFS ^ useconds] INTEGER (SIZE 2 BYTES)
+    }
+    [fattr_NFS ^ fattr] ::= SEQUENCE {
+        [type_fattr_NFS ^ type] OCTET STRING (SIZE 4 BYTES),
+        [mode_fattr_NFS ^ mode] OCTET STRING (SIZE 4 BYTES),
+        [nlink_fattr_NFS ^ nlink] INTEGER (SIZE 2 BYTES),
+        [uid_fattr_NFS ^ uid] INTEGER (SIZE 2 BYTES),
+        [gid_fattr_NFS ^ gid] INTEGER (SIZE 2 BYTES),
+        [size_fattr_NFS ^ size] INTEGER (SIZE 2 BYTES),
+        [blocksize_fattr_NFS ^ blocksize] INTEGER (SIZE 2 BYTES),
+        [rdev_fattr_NFS ^ rdev] INTEGER (SIZE 2 BYTES),
+        [blocks_fattr_NFS ^ blocks] INTEGER (SIZE 2 BYTES),
+        [fsid_fattr_NFS ^ fsid] INTEGER (SIZE 2 BYTES),
+        [fileid_fattr_NFS ^ fileid] INTEGER (SIZE 2 BYTES),
+        [atime_fattr_NFS ^ atime] timeval_NFS (SIZE DEFINED),
+        [mtime_fattr_NFS ^ mtime] timeval_NFS (SIZE DEFINED),
+        [ctime_fattr_NFS ^ ctime] timeval_NFS (SIZE DEFINED)
+    }
+    [fhandle_NFS ^ fhandle] ::= SEQUENCE {
+        [length_fhandle_NFS ^ length] INTEGER (SIZE 4 BYTES),
+        [fileHandle_fhandle_NFS ^ fileHandle] OCTET STRING (SIZE 28 BYTES),
+    }
+    [id_NFS ^ id] ::= SEQUENCE {
+        [length_id_NFS ^ length] INTEGER (SIZE 4 BYTES),
+        [contents_id_NFS ^ contents] INTEGER (SIZE CONSTRAINED),
+        [fillbytes_id_NFS ^ fillbytes] INTEGER (SIZE CONSTRAINED)
+    } < transfer >
+    </ transfer >
+
+    [fName_NFS ^ fName] ::= SEQUENCE {
+        [length_fName_NFS ^ length] INTEGER (SIZE 4 BYTES),
+        [contents_fName_NFS ^ contents] OCTET STRING (SIZE CONSTRAINED),
+    } < transfer >
+    </ transfer >
+
+    [entry_NFS ^ entry] ::= SEQUENCE {
+        [valuefollow_entry_NFS ^ valuefollow] INTEGER (SIZE 4 BYTES),
+        [fileId_entry_NFS ^ fileId] INTEGER (SIZE 4 BYTES),
+        [name_entry_NFS ^ name] fName_NFS (SIZE DEFINED),
+        [cookie_entry_NFS ^ cookie] OCTET STRING (SIZE 4 BYTES)
+    }
+    [dir_NFS ^ dir] ::= SEQUENCE {
+        [fhandle_dir_NFS ^ fhandle] OCTET STRING (SIZE CONSTRAINED),
+        [name_dir_NFS ^ name] fName_NFS (SIZE CONSTRAINED),
+    }
+    [where_NFS ^ where] ::= SEQUENCE {
+        [dir_where_NFS ^ dir] fhandle_NFS (SIZE DEFINED),
+        [name_where_NFS ^ name] fName_NFS (SIZE DEFINED)
+    }
+    [fclient_NFS ^ fclient] ::= SEQUENCE {
+        [verifier_fclient_NFS ^ verifier] INTEGER (SIZE 8 BYTES),
+        [ident_fclient_NFS ^ ident] id_NFS (SIZE DEFINED),
+    }
+    [cbloc_NFS ^ cbloc] ::= SEQUENCE {
+        [rnetid_cbloc_NFS ^ rnetid] id_NFS (SIZE DEFINED),
+        [raddr_cbloc_NFS ^ raddr] id_NFS (SIZE DEFINED),
+    }
+    [callbck_NFS ^ callbck] ::= SEQUENCE {
+        [cbprogram_callbck_NFS ^ cbprogram] INTEGER (SIZE 4 BYTES),
+        [cblocation_callbck_NFS ^ cblocation] cbloc_NFS (SIZE DEFINED),
+    }
+    [ATTRMASK_NFS ^ ATTRMASK] ::= SEQUENCE {
+        [reqdattr_ATTRMASK_NFS ^ reqdattr] INTEGER (SIZE 4 BYTES)
+    }
+    [stateid_NFS ^ stateid] ::= SEQUENCE {
+        [seqid_stateid_NFS ^ seqid] INTEGER (SIZE 4 BYTES),
+        [data_stateid_NFS ^ data] OCTET STRING (SIZE 12 BYTES),
+    }
+    [SETATTRCALL_NFS ^ SETATTRCALL] ::= SEQUENCE {
+        [opcode_SETATTRCALL_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [statid_SETATTRCALL_NFS ^ statid] stateid_NFS (SIZE DEFINED),
+        [attmask_SETATTRCALL_NFS ^ attmask] INTEGER (SIZE 8 BYTES),
+        [mode_SETATTRCALL_NFS ^ mode] INTEGER (SIZE 4 BYTES),
+        [timeaccess_SETATTRCALL_NFS ^ timeaccess] INTEGER (SIZE 4 BYTES),
+        [timemodify_SETATTRCALL_NFS ^ timemodify] INTEGER (SIZE 4 BYTES),
+    } < transfer >
+        Back {[opcode_SETATTRCALL_NFS ^ opcode] == 34}
+    </ transfer >
+
+    [SETATTRREPLY_NFS ^ SETATTRREPLY] ::= SEQUENCE {
+        [opcode_SETATTRREPLY_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [status_SETATTRREPLY_NFS ^ status] INTEGER (SIZE 4 BYTES),
+        [attmask_SETATTRREPLY_NFS ^ attmask] INTEGER (SIZE 4 BYTES),
+    } < transfer >
+        Back {[opcode_SETATTRREPLY_NFS ^ opcode] == 34}
+    </ transfer >
+
+    [ACCESSCALL_NFS ^ ACCESSCALL] ::= SEQUENCE {
+        [opcode_ACCESSCALL_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [checkaccess_ACCESSCALL_NFS ^ checkaccess] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {[opcode_ACCESSCALL_NFS ^ opcode] == 3}
+    </ transfer >
+
+    [ACCESSREPLY_NFS ^ ACCESSREPLY] ::= SEQUENCE {
+        [opcode_ACCESSREPLY_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [status_ACCESSREPLY_NFS ^ status] INTEGER (SIZE 4 BYTES),
+        [supportedTypes_ACCESSREPLY_NFS ^ supportedTypes] INTEGER (SIZE 4 BYTES),
+        [accessRights_ACCESSREPLY_NFS ^ accessRights] INTEGER (SIZE 4 BYTES),
+    } < transfer >
+        Back {[opcode_ACCESSREPLY_NFS ^ opcode] == 3}
+    </ transfer >
+
+    [READLINKCALL_NFS ^ READLINKCALL] ::= SEQUENCE {
+        [object_READLINKCALL_NFS ^ object] fhandle_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [READLINKREPLY_NFS ^ READLINKREPLY] ::= SEQUENCE {
+        [status_READLINKREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+        [data_READLINKREPLY_NFS ^ data] fName_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [READCALL_NFS ^ READCALL] ::= SEQUENCE {
+        [file_READCALL_NFS ^ file] fhandle_NFS (SIZE DEFINED),
+        [offset_READCALL_NFS ^ offset] INTEGER (SIZE 4 BYTES),
+        [count_READCALL_NFS ^ count] INTEGER (SIZE 4 BYTES),
+        [totalCount_READCALL_NFS ^ totalCount] INTEGER (SIZE 4 BYTES),
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [READREPLY_NFS ^ READREPLY] ::= SEQUENCE {
+        [status_READREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+        [attributes_READREPLY_NFS ^ attributes] fattr_NFS (SIZE DEFINED),
+        [data_READREPLY_NFS ^ data] fName_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [WRITECALL_NFS ^ WRITECALL] ::= SEQUENCE {
+        [file_WRITECALL_NFS ^ file] fhandle_NFS (SIZE DEFINED),
+        [beginOffset_WRITECALL_NFS ^ beginOffset] INTEGER (SIZE 4 BYTES),
+        [offset_WRITECALL_NFS ^ offset] INTEGER (SIZE 4 BYTES),
+        [totalCount_WRITECALL_NFS ^ totalCount] INTEGER (SIZE 4 BYTES),
+        [data_WRITECALL_NFS ^ data] fName_NFS (SIZE DEFINED),
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [WRITEREPLY_NFS ^ WRITEREPLY] ::= SEQUENCE {
+        [status_WRITEREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+        [attributes_WRITEREPLY_NFS ^ attributes] fattr_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [GETATTRCALL_NFS ^ GETATTRCALL] ::= SEQUENCE {
+        [opcode_GETATTRCALL_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [attrmasks_GETATTRCALL_NFS ^ attrmasks] SET OF ATTRMASK_NFS (SIZE CONSTRAINED),
+    } < transfer >
+        Back {[opcode_GETATTRCALL_NFS ^ opcode] == 9}
+    </ transfer >
+
+    [GETATTRREPLY_NFS ^ GETATTRREPLY] ::= SEQUENCE {
+        [opcode_GETATTRREPLY_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [status_GETATTRREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+        [attributes_GETATTRREPLY_NFS ^ attributes] fattr_NFS (SIZE DEFINED),
+    } < transfer >
+        Back {[opcode_GETATTRREPLY_NFS ^ opcode] == 9}
+    </ transfer >
+
+    [GETFHCALL_NFS ^ GETFHCALL] ::= SEQUENCE {
+        [opcode_GETFHCALL_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+    } < transfer >
+        Back {[opcode_GETFHCALL_NFS ^ opcode] == 10}
+    </ transfer >
+
+    [CREATECALL_NFS ^ CREATECALL] ::= SEQUENCE {
+        [location_CREATECALL_NFS ^ location] where_NFS (SIZE DEFINED),
+        [attributes_CREATECALL_NFS ^ attributes] fattr_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [CREATEREPLY_NFS ^ CREATEREPLY] ::= SEQUENCE {
+        [status_CREATEREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+        [file_CREATEREPLY_NFS ^ file] fhandle_NFS (SIZE DEFINED),
+        [attributes_CREATEREPLY_NFS ^ attributes] fattr_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [REMOVECALL_NFS ^ REMOVECALL] ::= SEQUENCE {
+        [location_REMOVECALL_NFS ^ location] where_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [REMOVEREPLY_NFS ^ REMOVEREPLY] ::= SEQUENCE {
+        [status_REMOVEREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [RENAMECALL_NFS ^ RENAMECALL] ::= SEQUENCE {
+        [from_RENAMECALL_NFS ^ from] where_NFS (SIZE DEFINED),
+        [to_RENAMECALL_NFS ^ to] where_NFS (SIZE DEFINED)
+    } < transfer >
+    </ transfer >
+
+    [RENAMEREPLY_NFS ^ RENAMEREPLY] ::= SEQUENCE {
+        [status_RENAMEREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [LINKCALL_NFS ^ LINKCALL] ::= SEQUENCE {
+        [from_LINKCALL_NFS ^ from] fhandle_NFS (SIZE DEFINED),
+        [to_LINKCALL_NFS ^ to] where_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [LINKREPLY_NFS ^ LINKREPLY] ::= SEQUENCE {
+        [status_LINKREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [SYMLINKCALL_NFS ^ SYMLINKCALL] ::= SEQUENCE {
+        [from_SYMLINKCALL_NFS ^ from] where_NFS (SIZE DEFINED),
+        [to_SYMLINKCALL_NFS ^ to] OCTET STRING (SIZE 8 BYTES),
+        [attributes_SYMLINKCALL_NFS ^ attributes] fattr_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [SYMLINKREPLY_NFS ^ SYMLINKREPLY] ::= SEQUENCE {
+        [status_SYMLINKREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [MKDIRCALL_NFS ^ MKDIRCALL] ::= SEQUENCE {
+        [location_MKDIRCALL_NFS ^ location] where_NFS (SIZE DEFINED),
+        [attributes_MKDIRCALL_NFS ^ attributes] fattr_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [MKDIRREPLY_NFS ^ MKDIRREPLY] ::= SEQUENCE {
+        [status_MKDIRREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+        [file_MKDIRREPLY_NFS ^ file] fhandle_NFS (SIZE DEFINED),
+        [attributes_MKDIRREPLY_NFS ^ attributes] fattr_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [LOOKUPCALL_NFS ^ LOOKUPCALL] ::= SEQUENCE {
+        [opcode_LOOKUPCALL_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [name_LOOKUPCALL_NFS ^ name] fName_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {[opcode_LOOKUPCALL_NFS ^ opcode] == 15}
+    </ transfer >
+
+    [LOOKUPREPLY_NFS ^ LOOKUPREPLY] ::= SEQUENCE {
+        [opcode_LOOKUPREPLY_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [status_LOOKUPREPLY_NFS ^ status] INTEGER (SIZE 4 BYTES),
+    } < transfer >
+        Back {[opcode_LOOKUPREPLY_NFS ^ opcode] == 15}
+    </ transfer >
+
+    [RMDIRCALL_NFS ^ RMDIRCALL] ::= SEQUENCE {
+        [location_RMDIRCALL_NFS ^ location] where_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [RMDIRREPLY_NFS ^ RMDIRREPLY] ::= SEQUENCE {
+        [status_RMDIRREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [READDIRCALL_NFS ^ READDIRCALL] ::= SEQUENCE {
+        [opcode_READDIRCALL_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [cookie_READDIRCALL_NFS ^ cookie] INTEGER (SIZE 8 BYTES),
+        [cookieverf_READDIRCALL_NFS ^ cookieverf] INTEGER (SIZE 8 BYTES),
+        [dircount_READDIRCALL_NFS ^ dircount] INTEGER (SIZE 4 BYTES),
+        [maxcount_READDIRCALL_NFS ^ maxcount] INTEGER (SIZE 4 BYTES),
+        [attrmas_READDIRCALL_NFS ^ attrmas] INTEGER (SIZE 4 BYTES),
+        [attrma_READDIRCALL_NFS ^ attrma] INTEGER (SIZE 4 BYTES),
+    } < transfer >
+        Back {[opcode_READDIRCALL_NFS ^ opcode] == 26}
+    </ transfer >
+
+    [READDIRREPLY_NFS ^ READDIRREPLY] ::= SEQUENCE {
+        [opcode_READDIRREPLY_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [status_READDIRREPLY_NFS ^ status] INTEGER (SIZE 4 BYTES),
+        [verifier_READDIRREPLY_NFS ^ verifier] INTEGER (SIZE 8 BYTES),
+        [valuefollow_READDIRREPLY_NFS ^ valuefollow] INTEGER (SIZE 4 BYTES),
+        [eof_READDIRREPLY_NFS ^ eof] INTEGER (SIZE 4 BYTES),
+    } < transfer >
+        Back {[opcode_READDIRREPLY_NFS ^ opcode] == 26}
+    </ transfer >
+
+    [STATFSCALL_NFS ^ STATFSCALL] ::= SEQUENCE {
+        [object_STATFSCALL_NFS ^ object] fhandle_NFS (SIZE DEFINED),
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [STATFSREPLY_NFS ^ STATFSREPLY] ::= SEQUENCE {
+        [status_STATFSREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+        [tSize_STATFSREPLY_NFS ^ tSize] INTEGER (SIZE 4 BYTES),
+        [bSize_STATFSREPLY_NFS ^ bSize] INTEGER (SIZE 4 BYTES),
+        [blocks_STATFSREPLY_NFS ^ blocks] INTEGER (SIZE 4 BYTES),
+        [bFree_STATFSREPLY_NFS ^ bFree] INTEGER (SIZE 4 BYTES),
+        [bAvail_STATFSREPLY_NFS ^ bAvail] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [FSSTATCALL_NFS ^ FSSTATCALL] ::= SEQUENCE {
+        [object_FSSTATCALL_NFS ^ object] fhandle_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [FSSTATREPLY_NFS ^ FSSTATREPLY] ::= SEQUENCE {
+        [status_FSSTATREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+        [attrfollow_FSSTATREPLY_NFS ^ attrfollow] INTEGER (SIZE 4 BYTES),
+        [attributes_FSSTATREPLY_NFS ^ attributes] fattr_NFS (SIZE DEFINED),
+        [totalbytes_FSSTATREPLY_NFS ^ totalbytes] INTEGER (SIZE 8 BYTES),
+        [freebytes_FSSTATREPLY_NFS ^ freebytes] INTEGER (SIZE 8 BYTES),
+        [availablefreebytes_FSSTATREPLY_NFS ^ availablefreebytes] INTEGER (SIZE 8 BYTES),
+        [totalfileslots_FSSTATREPLY_NFS ^ totalfileslots] INTEGER (SIZE 8 BYTES),
+        [freefileslots_FSSTATREPLY_NFS ^ freefileslots] INTEGER (SIZE 8 BYTES),
+        [availablefreefileslots_FSSTATREPLY_NFS ^ availablefreefileslots] INTEGER (SIZE 8 BYTES),
+        [invarsec_FSSTATREPLY_NFS ^ invarsec] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [FSINFOCALL_NFS ^ FSINFOCALL] ::= SEQUENCE {
+        [object_FSINFOCALL_NFS ^ object] fhandle_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [FSINFOREPLY_NFS ^ FSINFOREPLY] ::= SEQUENCE {
+        [status_FSINFOREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+        [attrfollow_FSINFOREPLY_NFS ^ attrfollow] INTEGER (SIZE 4 BYTES),
+        [attributes_FSINFOREPLY_NFS ^ attributes] fattr_NFS (SIZE DEFINED),
+        [rtmax_FSINFOREPLY_NFS ^ rtmax] INTEGER (SIZE 4 BYTES),
+        [rtpref_FSINFOREPLY_NFS ^ rtpref] INTEGER (SIZE 4 BYTES),
+        [rtmult_FSINFOREPLY_NFS ^ rtmult] INTEGER (SIZE 4 BYTES),
+        [wtmax_FSINFOREPLY_NFS ^ wtmax] INTEGER (SIZE 4 BYTES),
+        [wtpref_FSINFOREPLY_NFS ^ wtpref] INTEGER (SIZE 4 BYTES),
+        [wtmult_FSINFOREPLY_NFS ^ wtmult] INTEGER (SIZE 4 BYTES),
+        [dtpref_FSINFOREPLY_NFS ^ dtpref] INTEGER (SIZE 4 BYTES),
+        [maxfilesize_FSINFOREPLY_NFS ^ maxfilesize] INTEGER (SIZE 8 BYTES),
+        [timedelta_FSINFOREPLY_NFS ^ timedelta] timeval_NFS (SIZE DEFINED),
+        [properties_FSINFOREPLY_NFS ^ properties] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [PATHCONFCALL_NFS ^ PATHCONFCALL] ::= SEQUENCE {
+        [object_PATHCONFCALL_NFS ^ object] fhandle_NFS (SIZE DEFINED)
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [PATHCONFREPLY_NFS ^ PATHCONFREPLY] ::= SEQUENCE {
+        [status_PATHCONFREPLY_NFS ^ status] INTEGER (SIZE 2 BYTES),
+        [attrfollow_PATHCONFREPLY_NFS ^ attrfollow] INTEGER (SIZE 4 BYTES),
+        [attributes_PATHCONFREPLY_NFS ^ attributes] fattr_NFS (SIZE DEFINED),
+        [linkmax_PATHCONFREPLY_NFS ^ linkmax] INTEGER (SIZE 4 BYTES),
+        [namemax_PATHCONFREPLY_NFS ^ namemax] INTEGER (SIZE 4 BYTES),
+        [notrunc_PATHCONFREPLY_NFS ^ notrunc] INTEGER (SIZE 4 BYTES),
+        [chownrestricted_PATHCONFREPLY_NFS ^ chownrestricted] INTEGER (SIZE 4 BYTES),
+        [caseinsensitive_PATHCONFREPLY_NFS ^ caseinsensitive] INTEGER (SIZE 4 BYTES),
+        [casepreserving_PATHCONFREPLY_NFS ^ casepreserving] INTEGER (SIZE 4 BYTES),
+    } < transfer >
+        Back {5 == 6}
+    </ transfer >
+
+    [PUTFHCALL_NFS ^ PUTFHCALL] ::= SEQUENCE {
+        [opcode_PUTFHCALL_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [filehandle_PUTFHCALL_NFS ^ filehandle] fhandle_NFS (SIZE DEFINED),
+    } < transfer >
+        Back {[opcode_PUTFHCALL_NFS ^ opcode] == 22}
+    </ transfer >
+
+    [PUTFHREPLY_NFS ^ PUTFHREPLY] ::= SEQUENCE {
+        [opcode_PUTFHREPLY_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [status_PUTFHREPLY_NFS ^ status] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {[opcode_PUTFHREPLY_NFS ^ opcode] == 22}
+    </ transfer >
+
+    [SETCLIENTIDCALL_NFS ^ SETCLIENTIDCALL] ::= SEQUENCE {
+        [opcode_SETCLIENTIDCALL_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [client_SETCLIENTIDCALL_NFS ^ client] fclient_NFS (SIZE DEFINED),
+        [clientcallbck_SETCLIENTIDCALL_NFS ^ clientcallbck] callbck_NFS (SIZE DEFINED),
+        [callbckident_SETCLIENTIDCALL_NFS ^ callbckident] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {[opcode_SETCLIENTIDCALL_NFS ^ opcode] == 35}
+    </ transfer >
+
+    [SETCLIENTIDREPLY_NFS ^ SETCLIENTIDREPLY] ::= SEQUENCE {
+        [opcode_SETCLIENTIDREPLY_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [status_SETCLIENTIDREPLY_NFS ^ status] INTEGER (SIZE 4 BYTES),
+        [clientid_SETCLIENTIDREPLY_NFS ^ clientid] INTEGER (SIZE 8 BYTES),
+        [identifier_SETCLIENTIDREPLY_NFS ^ identifier] INTEGER (SIZE 8 BYTES),
+    } < transfer >
+        Back {[opcode_SETCLIENTIDREPLY_NFS ^ opcode] == 35}
+    </ transfer >
+
+    [SETCLIENTIDCONFIRMCALL_NFS ^ SETCLIENTIDCONFIRMCALL] ::= SEQUENCE {
+        [opcode_SETCLIENTIDCONFIRMCALL_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [clientid_SETCLIENTIDCONFIRMCALL_NFS ^ clientid] INTEGER (SIZE 8 BYTES),
+        [verifier_SETCLIENTIDCONFIRMCALL_NFS ^ verifier] INTEGER (SIZE 8 BYTES),
+    } < transfer >
+        Back {[opcode_SETCLIENTIDCONFIRMCALL_NFS ^ opcode] == 36}
+    </ transfer >
+
+    [SETCLIENTIDCONFIRMREPLY_NFS ^ SETCLIENTIDCONFIRMREPLY] ::= SEQUENCE {
+        [opcode_SETCLIENTIDCONFIRMREPLY_NFS ^ opcode] INTEGER (SIZE 4 BYTES),
+        [status_SETCLIENTIDCONFIRMREPLY_NFS ^ status] INTEGER (SIZE 4 BYTES),
+    } < transfer >
+        Back {[opcode_SETCLIENTIDCONFIRMREPLY_NFS ^ opcode] == 36}
+    </ transfer >
+
+    [machinename_NFS ^ machinename] ::= SEQUENCE {
+        [length_machinename_NFS ^ length] INTEGER (SIZE 4 BYTES),
+        [contents_machinename_NFS ^ contents] INTEGER (SIZE 6 BYTES),
+        [fillbytes_machinename_NFS ^ fillbytes] INTEGER (SIZE 2 BYTES),
+    }
+    [identifier_NFS ^ identifier] ::= SEQUENCE {
+        [flavor_identifier_NFS ^ flavor] INTEGER (SIZE 4 BYTES),
+        [length_identifier_NFS ^ length] INTEGER (SIZE 4 BYTES)
+    }
+    [longidentifier_NFS ^ longidentifier] ::= SEQUENCE {
+        [flavor_longidentifier_NFS ^ flavor] INTEGER (SIZE 4 BYTES),
+        [length_longidentifier_NFS ^ length] INTEGER (SIZE 4 BYTES),
+        [stamp_longidentifier_NFS ^ stamp] INTEGER (SIZE 4 BYTES),
+        [name_longidentifier_NFS ^ name] machinename_NFS (SIZE DEFINED),
+        [uid_longidentifier_NFS ^ uid] INTEGER (SIZE 4 BYTES),
+        [gid_longidentifier_NFS ^ gid] INTEGER (SIZE 4 BYTES),
+        [auxgid_longidentifier_NFS ^ auxgid] INTEGER (SIZE 8 BYTES),
+    }
+    [RPCCALL_NFS ^ RPCCALL] ::= SEQUENCE {
+        [fragmentheader_RPCCALL_NFS ^ fragmentheader] INTEGER (SIZE 4 BYTES),
+        [XID_RPCCALL_NFS ^ XID] INTEGER (SIZE 4 BYTES),
+        [messageType_RPCCALL_NFS ^ messageType] INTEGER (SIZE 4 BYTES),
+        [rpcVersion_RPCCALL_NFS ^ rpcVersion] INTEGER (SIZE 4 BYTES),
+        [program_RPCCALL_NFS ^ program] INTEGER (SIZE 4 BYTES),
+        [programVersion_RPCCALL_NFS ^ programVersion] INTEGER (SIZE 4 BYTES),
+        [procedureName_RPCCALL_NFS ^ procedureName] INTEGER (SIZE 4 BYTES),
+        [credenitails_RPCCALL_NFS ^ credenitails] longidentifier_NFS (SIZE DEFINED),
+        [verifier_RPCCALL_NFS ^ verifier] identifier_NFS (SIZE DEFINED),
+    } < transfer >
+        Back {[messageType_RPCCALL_NFS ^ messageType] == 0}
+    </ transfer >
+
+    [RPCREPLY_NFS ^ RPCREPLY] ::= SEQUENCE {
+        [fragmentheader_RPCREPLY_NFS ^ fragmentheader] INTEGER (SIZE 4 BYTES),
+        [XID_RPCREPLY_NFS ^ XID] INTEGER (SIZE 4 BYTES),
+        [messageType_RPCREPLY_NFS ^ messageType] INTEGER (SIZE 4 BYTES),
+        [replystate_RPCREPLY_NFS ^ replystate] INTEGER (SIZE 4 BYTES),
+        [verifier_RPCREPLY_NFS ^ verifier] identifier_NFS (SIZE DEFINED),
+        [acceptState_RPCREPLY_NFS ^ acceptState] INTEGER (SIZE 4 BYTES),
+    } < transfer >
+        Back {[messageType_RPCREPLY_NFS ^ messageType] == 1}
+    </ transfer >
+
+    [CALLOPERATION_NFS ^ CALLOPERATION] ::= (PUTFHCALL_NFS | GETATTRCALL_NFS | SETATTRCALL_NFS | LOOKUPCALL_NFS | READLINKCALL_NFS | READCALL_NFS |
+      WRITECALL_NFS | CREATECALL_NFS | REMOVECALL_NFS | RENAMECALL_NFS | LINKCALL_NFS | SYMLINKCALL_NFS | MKDIRCALL_NFS | RMDIRCALL_NFS | READDIRCALL_NFS |
+      STATFSCALL_NFS | FSINFOCALL_NFS | FSSTATCALL_NFS | PATHCONFCALL_NFS | SETCLIENTIDCALL_NFS | SETCLIENTIDCONFIRMCALL_NFS)
+    [REPLYOPERATION_NFS ^ REPLYOPERATION] ::= (PUTFHREPLY_NFS | GETATTRREPLY_NFS | SETATTRREPLY_NFS | LOOKUPREPLY_NFS | READLINKREPLY_NFS | READREPLY_NFS |
+      WRITEREPLY_NFS | CREATEREPLY_NFS | REMOVEREPLY_NFS | RENAMEREPLY_NFS | LINKREPLY_NFS | SYMLINKREPLY_NFS | MKDIRREPLY_NFS | RMDIRREPLY_NFS |
+      READDIRREPLY_NFS | STATFSREPLY_NFS | FSINFOREPLY_NFS | FSSTATREPLY_NFS | PATHCONFREPLY_NFS | SETCLIENTIDREPLY_NFS | SETCLIENTIDCONFIRMREPLY_NFS)
+    [PDUCALL_NFS ^ PDUCALL] ::= SEQUENCE {
+        [rpc_PDUCALL_NFS ^ rpc] RPCCALL_NFS (SIZE DEFINED),
+        [tag_PDUCALL_NFS ^ tag] INTEGER (SIZE 4 BYTES),
+        [minorversion_PDUCALL_NFS ^ minorversion] INTEGER (SIZE 4 BYTES),
+        [operationcount_PDUCALL_NFS ^ operationcount] INTEGER (SIZE 4 BYTES),
+        [operations_PDUCALL_NFS ^ operations] SET OF CALLOPERATION_NFS (SIZE CONSTRAINED)
+    } < transfer >
+        Back {([rpc_PDUCALL_NFS.rpcVersion_RPCCALL_NFS ^ rpc.rpcVersion] == 1 || [rpc_PDUCALL_NFS.rpcVersion_RPCCALL_NFS ^ rpc.rpcVersion] == 2 || [
+          rpc_PDUCALL_NFS.rpcVersion_RPCCALL_NFS ^ rpc.rpcVersion] == 3 || [rpc_PDUCALL_NFS.rpcVersion_RPCCALL_NFS ^ rpc.rpcVersion] == 4)}
+        Back {[rpc_PDUCALL_NFS.messageType_RPCCALL_NFS ^ rpc.messageType] == 0}
+    </ transfer >
+
+    [PDUREPLY_NFS ^ PDUREPLY] ::= SEQUENCE {
+        [rpc_PDUREPLY_NFS ^ rpc] RPCREPLY_NFS (SIZE DEFINED),
+        [status_PDUREPLY_NFS ^ status] INTEGER (SIZE 4 BYTES),
+        [tag_PDUREPLY_NFS ^ tag] INTEGER (SIZE 4 BYTES),
+        [operationcount_PDUREPLY_NFS ^ operationcount] INTEGER (SIZE 4 BYTES),
+        [operations_PDUREPLY_NFS ^ operations] SET OF REPLYOPERATION_NFS (SIZE CONSTRAINED)
+    } < transfer >
+        Back {[rpc_PDUREPLY_NFS.messageType_RPCREPLY_NFS ^ rpc.messageType] == 1}
+    </ transfer >
+
+    [PDU_NFS ^ PDU] ::= (PDUCALL_NFS | PDUREPLY_NFS) < transfer >
+    </ transfer >
+
+END

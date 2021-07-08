@@ -1,0 +1,136 @@
+DNS DEFINITIONS ::= BEGIN
+    EXPORTS PDU;
+    [PDU_DNS ^ PDU] ::= SEQUENCE {
+        [transactionId_PDU_DNS ^ transactionId] INTEGER (SIZE 2 BYTES),
+        [flags_PDU_DNS ^ flags] OCTET STRING (SIZE 2 BYTES),
+        [numQuestion_PDU_DNS ^ numQuestion] INTEGER (SIZE 2 BYTES),
+        [numAnswer_PDU_DNS ^ numAnswer] INTEGER (SIZE 2 BYTES),
+        [numAuthority_PDU_DNS ^ numAuthority] INTEGER (SIZE 2 BYTES),
+        [numAdditional_PDU_DNS ^ numAdditional] INTEGER (SIZE 2 BYTES),
+        [question_PDU_DNS ^ question] SET OF Queryy (SIZE CONSTRAINED),
+        [answer_PDU_DNS ^ answer] SET OF ResourceRecord1 (SIZE CONSTRAINED),
+        [authority_PDU_DNS ^ authority] SET OF ResourceRecord2 (SIZE CONSTRAINED),
+        [additional_PDU_DNS ^ additional] SET OF ResourceRecord3 (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {SRCPORT == 53 || DSTPORT == 53}
+        Forward {CARDINALITY (question) == numQuestion}
+        Forward {CARDINALITY (answer) == numAnswer}
+        Forward {CARDINALITY (authority) == numAuthority}
+        Forward {CARDINALITY (additional) == numAdditional}
+    </ transfer >
+
+    [Queryy_DNS ^ Queryy] ::= SEQUENCE {
+        [name_Queryy_DNS ^ name] Domain (SIZE DEFINED),
+        [type_Queryy_DNS ^ type] INTEGER (SIZE 2 BYTES),
+        [class_Queryy_DNS ^ class] INTEGER (SIZE 2 BYTES)
+    }
+    [ResourceRecord1_DNS ^ ResourceRecord1] ::= (ResourceRecord)
+    [ResourceRecord2_DNS ^ ResourceRecord2] ::= (ResourceRecord)
+    [ResourceRecord3_DNS ^ ResourceRecord3] ::= (ResourceRecord)
+    [ResourceRecord_DNS ^ ResourceRecord] ::= (ResourceRecordA | ResourceRecordAAAA | ResourceRecordCNAME | ResourceRecordSOA | ResourceRecordOPT |
+      ResourceRecordNS)
+    [ResourceRecordA_DNS ^ ResourceRecordA] ::= SEQUENCE {
+        [name_ResourceRecordA_DNS ^ name] Domain (SIZE DEFINED),
+        [type_ResourceRecordA_DNS ^ type] INTEGER (SIZE 2 BYTES),
+        [class_ResourceRecordA_DNS ^ class] INTEGER (SIZE 2 BYTES),
+        [timeToLive_ResourceRecordA_DNS ^ timeToLive] INTEGER (SIZE 4 BYTES),
+        [dataLength_ResourceRecordA_DNS ^ dataLength] INTEGER (SIZE 2 BYTES),
+        [address_ResourceRecordA_DNS ^ address] OCTET STRING (SIZE 4 BYTES)
+    } < transfer >
+        Back {type == 1}
+    </ transfer >
+
+    [ResourceRecordAAAA_DNS ^ ResourceRecordAAAA] ::= SEQUENCE {
+        [name_ResourceRecordAAAA_DNS ^ name] Domain (SIZE DEFINED),
+        [type_ResourceRecordAAAA_DNS ^ type] INTEGER (SIZE 2 BYTES),
+        [class_ResourceRecordAAAA_DNS ^ class] INTEGER (SIZE 2 BYTES),
+        [timeToLive_ResourceRecordAAAA_DNS ^ timeToLive] INTEGER (SIZE 4 BYTES),
+        [dataLength_ResourceRecordAAAA_DNS ^ dataLength] INTEGER (SIZE 2 BYTES),
+        [address_ResourceRecordAAAA_DNS ^ address] OCTET STRING (SIZE 16 BYTES)
+    } < transfer >
+        Back {type == 28}
+    </ transfer >
+
+    [ResourceRecordCNAME_DNS ^ ResourceRecordCNAME] ::= SEQUENCE {
+        [name_ResourceRecordCNAME_DNS ^ name] Domain (SIZE DEFINED),
+        [type_ResourceRecordCNAME_DNS ^ type] INTEGER (SIZE 2 BYTES),
+        [class_ResourceRecordCNAME_DNS ^ class] INTEGER (SIZE 2 BYTES),
+        [timeToLive_ResourceRecordCNAME_DNS ^ timeToLive] INTEGER (SIZE 4 BYTES),
+        [dataLength_ResourceRecordCNAME_DNS ^ dataLength] INTEGER (SIZE 2 BYTES),
+        [cname_ResourceRecordCNAME_DNS ^ cname] Domain (SIZE DEFINED)
+    } < transfer >
+        Back {type == 5}
+    </ transfer >
+
+    [ResourceRecordSOA_DNS ^ ResourceRecordSOA] ::= SEQUENCE {
+        [name_ResourceRecordSOA_DNS ^ name] Domain (SIZE DEFINED),
+        [type_ResourceRecordSOA_DNS ^ type] INTEGER (SIZE 2 BYTES),
+        [class_ResourceRecordSOA_DNS ^ class] INTEGER (SIZE 2 BYTES),
+        [timeToLive_ResourceRecordSOA_DNS ^ timeToLive] INTEGER (SIZE 4 BYTES),
+        [dataLength_ResourceRecordSOA_DNS ^ dataLength] INTEGER (SIZE 2 BYTES),
+        [primaryNameServer_ResourceRecordSOA_DNS ^ primaryNameServer] Domain (SIZE DEFINED),
+        [reponsibleAuthority_ResourceRecordSOA_DNS ^ reponsibleAuthority] Domain (SIZE DEFINED),
+        [serialNumber_ResourceRecordSOA_DNS ^ serialNumber] INTEGER (SIZE 4 BYTES),
+        [refreshInterval_ResourceRecordSOA_DNS ^ refreshInterval] INTEGER (SIZE 4 BYTES),
+        [retryInterval_ResourceRecordSOA_DNS ^ retryInterval] INTEGER (SIZE 4 BYTES),
+        [expireLimit_ResourceRecordSOA_DNS ^ expireLimit] INTEGER (SIZE 4 BYTES),
+        [minimumTTL_ResourceRecordSOA_DNS ^ minimumTTL] INTEGER (SIZE 4 BYTES)
+    } < transfer >
+        Back {type == 6}
+    </ transfer >
+
+    [ResourceRecordOPT_DNS ^ ResourceRecordOPT] ::= SEQUENCE {
+        [name_ResourceRecordOPT_DNS ^ name] Domain (SIZE DEFINED),
+        [type_ResourceRecordOPT_DNS ^ type] INTEGER (SIZE 2 BYTES),
+        [udpPayloadSize_ResourceRecordOPT_DNS ^ udpPayloadSize] INTEGER (SIZE 2 BYTES),
+        [higherBitsInExtendedRcode_ResourceRecordOPT_DNS ^ higherBitsInExtendedRcode] INTEGER (SIZE 1 BYTES),
+        [EDNS0Version_ResourceRecordOPT_DNS ^ EDNS0Version] INTEGER (SIZE 1 BYTES),
+        [z_ResourceRecordOPT_DNS ^ z] INTEGER (SIZE 2 BYTES),
+        [dataLength_ResourceRecordOPT_DNS ^ dataLength] INTEGER (SIZE 2 BYTES)
+    } < transfer >
+        Back {type == 41}
+    </ transfer >
+
+    [ResourceRecordNS_DNS ^ ResourceRecordNS] ::= SEQUENCE {
+        [name_ResourceRecordNS_DNS ^ name] Domain (SIZE DEFINED),
+        [type_ResourceRecordNS_DNS ^ type] INTEGER (SIZE 2 BYTES),
+        [class_ResourceRecordNS_DNS ^ class] INTEGER (SIZE 2 BYTES),
+        [timeToLive_ResourceRecordNS_DNS ^ timeToLive] INTEGER (SIZE 4 BYTES),
+        [dataLength_ResourceRecordNS_DNS ^ dataLength] INTEGER (SIZE 2 BYTES),
+        [nameServer_ResourceRecordNS_DNS ^ nameServer] Domain (SIZE DEFINED)
+    } < transfer >
+        Back {type == 2}
+    </ transfer >
+
+    [Domain_DNS ^ Domain] ::= SEQUENCE {
+        [words_Domain_DNS ^ words] SET OF Word (SIZE CONSTRAINED)
+    } < transfer >
+        Forward {TERMINATE (words) == EndWord}
+    </ transfer >
+
+    [Word_DNS ^ Word] ::= (InlineWord | EndWord)
+    [EndWord_DNS ^ EndWord] ::= (ReferenceWord | NullWord)
+    [InlineWord_DNS ^ InlineWord] ::= SEQUENCE {
+        [length_InlineWord_DNS ^ length] INTEGER (SIZE 1 BYTES) SAVEPOS,
+        [letters_InlineWord_DNS ^ letters] OCTET STRING (SIZE CONSTRAINED)
+    } < transfer >
+        Forward {LENGTH (letters) == length}
+        Back {length != 0}
+        Back {length != 192}
+    </ transfer >
+
+    [ReferenceWord_DNS ^ ReferenceWord] ::= SEQUENCE {
+        [header_ReferenceWord_DNS ^ header] INTEGER (SIZE 1 BYTES),
+        [reference_ReferenceWord_DNS ^ reference] INTEGER (SIZE 1 BYTES)
+    } < transfer >
+        Back {header == 192}
+    </ transfer >
+
+    [NullWord_DNS ^ NullWord] ::= SEQUENCE {
+        [header_NullWord_DNS ^ header] INTEGER (SIZE 1 BYTES)
+    } < transfer >
+        Back {header == 0}
+    </ transfer >
+
+END
