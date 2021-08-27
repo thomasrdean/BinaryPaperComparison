@@ -1,0 +1,111 @@
+IGMP DEFINITIONS ::= BEGIN
+    EXPORTS PDU_IGMP;
+    [PDU_IGMP ^ PDU] ::= (V3Report_IGMP | Query_IGMP | V2Report_IGMP | V2Leave_IGMP)
+    [Query_IGMP ^ Query] ::= SEQUENCE {
+        [type_Query_IGMP ^ type] INTEGER (SIZE 1 BYTES),
+        [maxRespTime_Query_IGMP ^ maxRespTime] INTEGER (SIZE 1 BYTES),
+        [checksum_Query_IGMP ^ checksum] INTEGER (SIZE 2 BYTES),
+        [groupAddr_Query_IGMP ^ groupAddr] INTEGER (SIZE 4 BYTES),
+        [v3Add_Query_IGMP ^ v3Add] V3Addition_IGMP (SIZE DEFINED) OPTIONAL
+    } < transfer >
+        Back {[type_Query_IGMP ^ type] == 17}
+        Forward {EXISTS ([v3Add_Query_IGMP ^ v3Add]) == PDUREMAINING}
+        Callback
+    </ transfer >
+
+    [V3Addition_IGMP ^ V3Addition] ::= SEQUENCE {
+        [resvSQRV_V3Addition_IGMP ^ resvSQRV] INTEGER (SIZE 1 BYTES),
+        [QQIC_V3Addition_IGMP ^ QQIC] INTEGER (SIZE 1 BYTES),
+        [numSources_V3Addition_IGMP ^ numSources] INTEGER (SIZE 2 BYTES),
+        [srcAddrs_V3Addition_IGMP ^ srcAddrs] SET OF SOURCEADDRESS_IGMP (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Forward {CARDINALITY ([srcAddrs_V3Addition_IGMP ^ srcAddrs]) == [numSources_V3Addition_IGMP ^ numSources]}
+    </ transfer >
+
+    [V2Report_IGMP ^ V2Report] ::= SEQUENCE {
+        [type_V2Report_IGMP ^ type] INTEGER (SIZE 1 BYTES),
+        [maxRespTime_V2Report_IGMP ^ maxRespTime] INTEGER (SIZE 1 BYTES),
+        [checksum_V2Report_IGMP ^ checksum] INTEGER (SIZE 2 BYTES),
+        [groupAddr_V2Report_IGMP ^ groupAddr] INTEGER (SIZE 4 BYTES)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[type_V2Report_IGMP ^ type] == 22}
+        Callback
+    </ transfer >
+
+    [V2Leave_IGMP ^ V2Leave] ::= SEQUENCE {
+        [type_V2Leave_IGMP ^ type] INTEGER (SIZE 1 BYTES),
+        [maxRespTime_V2Leave_IGMP ^ maxRespTime] INTEGER (SIZE 1 BYTES),
+        [checksum_V2Leave_IGMP ^ checksum] INTEGER (SIZE 2 BYTES),
+        [groupAddr_V2Leave_IGMP ^ groupAddr] INTEGER (SIZE 4 BYTES)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[type_V2Leave_IGMP ^ type] == 23}
+        Callback
+    </ transfer >
+
+    [V3Report_IGMP ^ V3Report] ::= SEQUENCE {
+        [type_V3Report_IGMP ^ type] INTEGER (SIZE 1 BYTES),
+        [reserved_V3Report_IGMP ^ reserved] INTEGER (SIZE 1 BYTES),
+        [checksum_V3Report_IGMP ^ checksum] INTEGER (SIZE 2 BYTES),
+        [secondReserved_V3Report_IGMP ^ secondReserved] INTEGER (SIZE 2 BYTES),
+        [numGrps_V3Report_IGMP ^ numGrps] INTEGER (SIZE 2 BYTES),
+        [groupRecordInfo_V3Report_IGMP ^ groupRecordInfo] SET OF GROUPRECORD_IGMP (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[type_V3Report_IGMP ^ type] == 34}
+        Forward {CARDINALITY ([groupRecordInfo_V3Report_IGMP ^ groupRecordInfo]) == [numGrps_V3Report_IGMP ^ numGrps]}
+        Callback @ GROUPRECORD_IGMP
+    </ transfer >
+
+    [GROUPRECORD_IGMP ^ GROUPRECORD] ::= (V3LEAVE_IGMP | V3JOIN_IGMP | V3GENERALGROUP_IGMP) < transfer >
+        Callback ^ V3Report_IGMP groupRecordInfo
+    </ transfer >
+
+    [V3LEAVE_IGMP ^ V3LEAVE] ::= SEQUENCE {
+        [recordType_V3LEAVE_IGMP ^ recordType] INTEGER (SIZE 1 BYTES),
+        [auxDataLen_V3LEAVE_IGMP ^ auxDataLen] INTEGER (SIZE 1 BYTES),
+        [numSources_V3LEAVE_IGMP ^ numSources] INTEGER (SIZE 2 BYTES),
+        [groupAddr_V3LEAVE_IGMP ^ groupAddr] INTEGER (SIZE 4 BYTES),
+        [srcAddrs_V3LEAVE_IGMP ^ srcAddrs] SET OF SOURCEADDRESS_IGMP (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[recordType_V3LEAVE_IGMP ^ recordType] == 1}
+        Back {[numSources_V3LEAVE_IGMP ^ numSources] == 0}
+        Forward {CARDINALITY ([srcAddrs_V3LEAVE_IGMP ^ srcAddrs]) == [numSources_V3LEAVE_IGMP ^ numSources]}
+        Callback V3Report_IGMP groupRecordInfo
+    </ transfer >
+
+    [V3JOIN_IGMP ^ V3JOIN] ::= SEQUENCE {
+        [recordType_V3JOIN_IGMP ^ recordType] INTEGER (SIZE 1 BYTES),
+        [auxDataLen_V3JOIN_IGMP ^ auxDataLen] INTEGER (SIZE 1 BYTES),
+        [numSources_V3JOIN_IGMP ^ numSources] INTEGER (SIZE 2 BYTES),
+        [groupAddr_V3JOIN_IGMP ^ groupAddr] INTEGER (SIZE 4 BYTES),
+        [srcAddrs_V3JOIN_IGMP ^ srcAddrs] SET OF SOURCEADDRESS_IGMP (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[recordType_V3JOIN_IGMP ^ recordType] == 2 || [recordType_V3JOIN_IGMP ^ recordType] == 4}
+        Back {[numSources_V3JOIN_IGMP ^ numSources] == 0}
+        Forward {CARDINALITY ([srcAddrs_V3JOIN_IGMP ^ srcAddrs]) == [numSources_V3JOIN_IGMP ^ numSources]}
+        Callback V3Report_IGMP groupRecordInfo
+    </ transfer >
+
+    [V3GENERALGROUP_IGMP ^ V3GENERALGROUP] ::= SEQUENCE {
+        [recordType_V3GENERALGROUP_IGMP ^ recordType] INTEGER (SIZE 1 BYTES),
+        [auxDataLen_V3GENERALGROUP_IGMP ^ auxDataLen] INTEGER (SIZE 1 BYTES),
+        [numSources_V3GENERALGROUP_IGMP ^ numSources] INTEGER (SIZE 2 BYTES),
+        [groupAddr_V3GENERALGROUP_IGMP ^ groupAddr] INTEGER (SIZE 4 BYTES),
+        [srcAddrs_V3GENERALGROUP_IGMP ^ srcAddrs] SET OF SOURCEADDRESS_IGMP (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    < transfer >
+        Back {[numSources_V3GENERALGROUP_IGMP ^ numSources] != 0}
+        Forward {CARDINALITY ([srcAddrs_V3GENERALGROUP_IGMP ^ srcAddrs]) == [numSources_V3GENERALGROUP_IGMP ^ numSources]}
+        Callback V3Report_IGMP groupRecordInfo
+    </ transfer >
+
+    [SOURCEADDRESS_IGMP ^ SOURCEADDRESS] ::= SEQUENCE {
+        [srcAddr_SOURCEADDRESS_IGMP ^ srcAddr] INTEGER (SIZE 4 BYTES)
+    } (ENCODED BY CUSTOM)
+
+END

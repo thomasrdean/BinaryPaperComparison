@@ -1,0 +1,156 @@
+// I have tested that this parses dns.pcap and that it doesn't parse dns.pcap if I change it.
+
+BigEndian();
+
+typedef byte uint8;
+
+typedef struct {
+  ubyte length;
+  if(length != 0) {
+    if (length != (ubyte) 192) {
+      ubyte letters[length];
+    } else {
+      ubyte reference;
+    }
+  }
+} Word;
+
+typedef struct {
+  local int length = 0;
+  do {
+    Word words;
+    length++;
+  } while(words.length != 0 && words.length != 192);
+} Domain;
+
+typedef struct {
+  Domain name;
+  uint16 type;
+  uint16 class_;
+} Query;
+
+typedef struct {
+  byte data[16];
+} Ipv6Address;
+
+typedef struct {
+  byte data[4];
+} Ipv4Address;
+
+typedef struct {
+  uint8 mapNum;
+  uint8 length;
+  char mapbits[length];
+} Map;
+
+typedef struct {
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  Ipv4Address address;
+} RRBodyA;
+typedef struct {
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  Ipv6Address address;
+} RRBodyAAAA;
+typedef struct {
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  Domain cname;
+} RRBodyCNAME;
+typedef struct {
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  Domain primaryNameServer;
+  Domain reponsibleAuthority;
+  uint32 serialNumber;
+  uint32 refreshInterval;
+  uint32 retryInterval;
+  uint32 expireLimit;
+  uint32 minimumTTL;
+} RRBodySOA;
+typedef struct {
+  uint16 udpPayloadSize;
+  uint8 higherBitsInExtendedRcode;
+  uint8 EDNS0Version;
+  uint16 z;
+  uint16 dataLength;
+} RRBodyOPT;
+typedef struct {
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  Domain nameServer;
+} RRBodyNS;
+typedef struct {
+  uint16 class_;
+} RRBodyKEY;
+typedef struct {
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  uint16 typeCov;
+  uint8 alg;
+  uint8 labels;
+  uint32 OrigtimeToLive;
+  uint32 SigExp;
+  uint32 SigInception;
+  uint16 keyTag;
+  Domain signName;
+  char signature[256];
+} RRBodyRRSIG;
+typedef struct {
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  uint16 keyid;
+  uint8 alg;
+  uint8 digestType;
+  char digest[32];
+} RRBodyDS;
+typedef struct { // copied from Tom's SCL code, which he is unsure of
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  uint8 alg;
+  uint8 flags;
+  uint16 iterations;
+  uint8 saltLength;
+  uint8 hashlength;
+  char nexthash[hashlength];
+  Map typeMap;
+} RRBodyNSEC3;
+
+typedef struct {
+  Domain name;
+  uint16 type_;
+  switch(type_) {
+    case 1: RRBodyA body; break;
+    case 28: RRBodyAAAA body; break;
+    case 5: RRBodyCNAME body; break;
+    case 6: RRBodySOA body; break;
+    case 41: RRBodyOPT body; break;
+    case 2: RRBodyNS body; break;
+    case 48: RRBodyKEY body; break;
+    case 46: RRBodyRRSIG body; break;
+    case 43: RRBodyDS body; break;
+    case 50: RRBodyNSEC3 body; break;
+  }
+} ResourceRecord;
+
+struct DNS {
+  uint16 transactionId;
+  uint16 flags;
+  uint16 numQuestion;
+  uint16 numAnswer;
+  uint16 numAuthority;
+  uint16 numAdditional;
+  Query question[numQuestion];
+  ResourceRecord answer[numAnswer];
+  ResourceRecord authority[numAuthority];
+  ResourceRecord additional[numAdditional];
+} file;

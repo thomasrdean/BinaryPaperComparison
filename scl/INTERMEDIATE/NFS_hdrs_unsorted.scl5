@@ -1,0 +1,464 @@
+#ifndef NFS_H
+#define NFS_H
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <inttypes.h>
+#include "packet.h"
+#include "globals.h"
+#define PUTFHCALL_NFS_VAL (1)
+#define GETATTRCALL_NFS_VAL (2)
+#define SETATTRCALL_NFS_VAL (3)
+#define LOOKUPCALL_NFS_VAL (4)
+#define READLINKCALL_NFS_VAL (5)
+#define READCALL_NFS_VAL (6)
+#define WRITECALL_NFS_VAL (7)
+#define CREATECALL_NFS_VAL (8)
+#define REMOVECALL_NFS_VAL (9)
+#define RENAMECALL_NFS_VAL (10)
+#define LINKCALL_NFS_VAL (11)
+#define SYMLINKCALL_NFS_VAL (12)
+#define MKDIRCALL_NFS_VAL (13)
+#define RMDIRCALL_NFS_VAL (14)
+#define READDIRCALL_NFS_VAL (15)
+#define STATFSCALL_NFS_VAL (16)
+#define FSINFOCALL_NFS_VAL (17)
+#define FSSTATCALL_NFS_VAL (18)
+#define PATHCONFCALL_NFS_VAL (19)
+#define SETCLIENTIDCALL_NFS_VAL (20)
+#define SETCLIENTIDCONFIRMCALL_NFS_VAL (21)
+#define PUTFHREPLY_NFS_VAL (22)
+#define GETATTRREPLY_NFS_VAL (23)
+#define SETATTRREPLY_NFS_VAL (24)
+#define LOOKUPREPLY_NFS_VAL (25)
+#define READLINKREPLY_NFS_VAL (26)
+#define READREPLY_NFS_VAL (27)
+#define WRITEREPLY_NFS_VAL (28)
+#define CREATEREPLY_NFS_VAL (29)
+#define REMOVEREPLY_NFS_VAL (30)
+#define RENAMEREPLY_NFS_VAL (31)
+#define LINKREPLY_NFS_VAL (32)
+#define SYMLINKREPLY_NFS_VAL (33)
+#define MKDIRREPLY_NFS_VAL (34)
+#define RMDIRREPLY_NFS_VAL (35)
+#define READDIRREPLY_NFS_VAL (36)
+#define STATFSREPLY_NFS_VAL (37)
+#define FSINFOREPLY_NFS_VAL (38)
+#define FSSTATREPLY_NFS_VAL (39)
+#define PATHCONFREPLY_NFS_VAL (40)
+#define SETCLIENTIDREPLY_NFS_VAL (41)
+#define SETCLIENTIDCONFIRMREPLY_NFS_VAL (42)
+#define PDUCALL_NFS_VAL (43)
+#define PDUREPLY_NFS_VAL (44)
+typedef struct {
+    uint16_t seconds;
+    uint16_t useconds;
+} timeval_NFS;
+typedef struct {
+    uint32_t type;
+    uint32_t mode;
+    uint16_t nlink;
+    uint16_t uid;
+    uint16_t gid;
+    uint16_t size;
+    uint16_t blocksize;
+    uint16_t rdev;
+    uint16_t blocks;
+    uint16_t fsid;
+    uint16_t fileid;
+    timeval_NFS atime;
+    timeval_NFS mtime;
+    timeval_NFS ctime;
+} fattr_NFS;
+typedef struct {
+    uint32_t length;
+    unsigned char filehandle [28];
+} fhandle_NFS;
+typedef struct {
+    uint32_t length;
+} id_NFS;
+typedef struct {
+    uint32_t length;
+    unsigned long contents_length;
+    unsigned char *contents;
+} fName_NFS;
+typedef struct {
+    uint32_t valuefollow;
+    uint32_t fileid;
+    fName_NFS name;
+    uint32_t cookie;
+} entry_NFS;
+typedef struct {
+    unsigned long fhandle_length;
+    unsigned char *fhandle;
+} dir_NFS;
+typedef struct {
+    fhandle_NFS dir;
+    fName_NFS name;
+} where_NFS;
+typedef struct {
+    uint64_t verifier;
+    id_NFS ident;
+} fclient_NFS;
+typedef struct {
+    id_NFS rnetid;
+    id_NFS raddr;
+} cbloc_NFS;
+typedef struct {
+    uint32_t cbprogram;
+    cbloc_NFS cblocation;
+} callbck_NFS;
+typedef struct {
+    uint32_t reqdattr;
+} ATTRMASK_NFS;
+typedef struct {
+    uint32_t seqid;
+    unsigned char data [12];
+} stateid_NFS;
+typedef struct {
+    uint32_t opcode;
+    stateid_NFS statid;
+    uint64_t attmask;
+    uint32_t mode;
+    uint32_t timeaccess;
+    uint32_t timemodify;
+} SETATTRCALL_NFS;
+typedef struct {
+    uint32_t opcode;
+    uint32_t status;
+    uint32_t attmask;
+} SETATTRREPLY_NFS;
+typedef struct {
+    uint32_t opcode;
+    uint32_t checkaccess;
+} ACCESSCALL_NFS;
+typedef struct {
+    uint32_t opcode;
+    uint32_t status;
+    uint32_t supportedtypes;
+    uint32_t accessrights;
+} ACCESSREPLY_NFS;
+typedef struct {
+    fhandle_NFS object;
+} READLINKCALL_NFS;
+typedef struct {
+    uint16_t status;
+    fName_NFS data;
+} READLINKREPLY_NFS;
+typedef struct {
+    fhandle_NFS file;
+    uint32_t offset;
+    uint32_t count;
+    uint32_t totalcount;
+} READCALL_NFS;
+typedef struct {
+    uint16_t status;
+    fattr_NFS attributes;
+    fName_NFS data;
+} READREPLY_NFS;
+typedef struct {
+    fhandle_NFS file;
+    uint32_t beginoffset;
+    uint32_t offset;
+    uint32_t totalcount;
+    fName_NFS data;
+} WRITECALL_NFS;
+typedef struct {
+    uint16_t status;
+    fattr_NFS attributes;
+} WRITEREPLY_NFS;
+typedef struct {
+    uint32_t opcode;
+    unsigned long attrmaskslength;
+    unsigned long attrmaskscount;
+    ATTRMASK_NFS *attrmasks;
+} GETATTRCALL_NFS;
+typedef struct {
+    uint32_t opcode;
+    uint16_t status;
+    fattr_NFS attributes;
+} GETATTRREPLY_NFS;
+typedef struct {
+    uint32_t opcode;
+} GETFHCALL_NFS;
+typedef struct {
+    where_NFS location;
+    fattr_NFS attributes;
+} CREATECALL_NFS;
+typedef struct {
+    uint16_t status;
+    fhandle_NFS file;
+    fattr_NFS attributes;
+} CREATEREPLY_NFS;
+typedef struct {
+    where_NFS location;
+} REMOVECALL_NFS;
+typedef struct {
+    uint16_t status;
+} REMOVEREPLY_NFS;
+typedef struct {
+    where_NFS from;
+    where_NFS to;
+} RENAMECALL_NFS;
+typedef struct {
+    uint16_t status;
+} RENAMEREPLY_NFS;
+typedef struct {
+    fhandle_NFS from;
+    where_NFS to;
+} LINKCALL_NFS;
+typedef struct {
+    uint16_t status;
+} LINKREPLY_NFS;
+typedef struct {
+    where_NFS from;
+    uint64_t to;
+    fattr_NFS attributes;
+} SYMLINKCALL_NFS;
+typedef struct {
+    uint16_t status;
+} SYMLINKREPLY_NFS;
+typedef struct {
+    where_NFS location;
+    fattr_NFS attributes;
+} MKDIRCALL_NFS;
+typedef struct {
+    uint16_t status;
+    fhandle_NFS file;
+    fattr_NFS attributes;
+} MKDIRREPLY_NFS;
+typedef struct {
+    uint32_t opcode;
+    fName_NFS name;
+} LOOKUPCALL_NFS;
+typedef struct {
+    uint32_t opcode;
+    uint32_t status;
+} LOOKUPREPLY_NFS;
+typedef struct {
+    where_NFS location;
+} RMDIRCALL_NFS;
+typedef struct {
+    uint16_t status;
+} RMDIRREPLY_NFS;
+typedef struct {
+    uint32_t opcode;
+    uint64_t cookie;
+    uint64_t cookieverf;
+    uint32_t dircount;
+    uint32_t maxcount;
+    uint32_t attrmas;
+    uint32_t attrma;
+} READDIRCALL_NFS;
+typedef struct {
+    uint32_t opcode;
+    uint32_t status;
+    uint64_t verifier;
+    uint32_t valuefollow;
+    uint32_t eof;
+} READDIRREPLY_NFS;
+typedef struct {
+    fhandle_NFS object;
+} STATFSCALL_NFS;
+typedef struct {
+    uint16_t status;
+    uint32_t tsize;
+    uint32_t bsize;
+    uint32_t blocks;
+    uint32_t bfree;
+    uint32_t bavail;
+} STATFSREPLY_NFS;
+typedef struct {
+    fhandle_NFS object;
+} FSSTATCALL_NFS;
+typedef struct {
+    uint16_t status;
+    uint32_t attrfollow;
+    fattr_NFS attributes;
+    uint64_t totalbytes;
+    uint64_t freebytes;
+    uint64_t availablefreebytes;
+    uint64_t totalfileslots;
+    uint64_t freefileslots;
+    uint64_t availablefreefileslots;
+    uint32_t invarsec;
+} FSSTATREPLY_NFS;
+typedef struct {
+    fhandle_NFS object;
+} FSINFOCALL_NFS;
+typedef struct {
+    uint16_t status;
+    uint32_t attrfollow;
+    fattr_NFS attributes;
+    uint32_t rtmax;
+    uint32_t rtpref;
+    uint32_t rtmult;
+    uint32_t wtmax;
+    uint32_t wtpref;
+    uint32_t wtmult;
+    uint32_t dtpref;
+    uint64_t maxfilesize;
+    timeval_NFS timedelta;
+    uint32_t properties;
+} FSINFOREPLY_NFS;
+typedef struct {
+    fhandle_NFS object;
+} PATHCONFCALL_NFS;
+typedef struct {
+    uint16_t status;
+    uint32_t attrfollow;
+    fattr_NFS attributes;
+    uint32_t linkmax;
+    uint32_t namemax;
+    uint32_t notrunc;
+    uint32_t chownrestricted;
+    uint32_t caseinsensitive;
+    uint32_t casepreserving;
+} PATHCONFREPLY_NFS;
+typedef struct {
+    uint32_t opcode;
+    fhandle_NFS filehandle;
+} PUTFHCALL_NFS;
+typedef struct {
+    uint32_t opcode;
+    uint32_t status;
+} PUTFHREPLY_NFS;
+typedef struct {
+    uint32_t opcode;
+    fclient_NFS client;
+    callbck_NFS clientcallbck;
+    uint32_t callbckident;
+} SETCLIENTIDCALL_NFS;
+typedef struct {
+    uint32_t opcode;
+    uint32_t status;
+    uint64_t clientid;
+    uint64_t identifier;
+} SETCLIENTIDREPLY_NFS;
+typedef struct {
+    uint32_t opcode;
+    uint64_t clientid;
+    uint64_t verifier;
+} SETCLIENTIDCONFIRMCALL_NFS;
+typedef struct {
+    uint32_t opcode;
+    uint32_t status;
+} SETCLIENTIDCONFIRMREPLY_NFS;
+typedef struct {
+    uint32_t length;
+    uint64_t contents;
+    uint16_t fillbytes;
+} machinename_NFS;
+typedef struct {
+    uint32_t flavor;
+    uint32_t length;
+} identifier_NFS;
+typedef struct {
+    uint32_t flavor;
+    uint32_t length;
+    uint32_t stamp;
+    machinename_NFS name;
+    uint32_t uid;
+    uint32_t gid;
+    uint64_t auxgid;
+} longidentifier_NFS;
+typedef struct {
+    uint32_t fragmentheader;
+    uint32_t xid;
+    uint32_t messagetype;
+    uint32_t rpcversion;
+    uint32_t program;
+    uint32_t programversion;
+    uint32_t procedurename;
+    longidentifier_NFS credenitails;
+    identifier_NFS verifier;
+} RPCCALL_NFS;
+typedef struct {
+    uint32_t fragmentheader;
+    uint32_t xid;
+    uint32_t messagetype;
+    uint32_t replystate;
+    identifier_NFS verifier;
+    uint32_t acceptstate;
+} RPCREPLY_NFS;
+typedef struct {
+    uint32_t type;
+    union {
+        PUTFHCALL_NFS putfhcall_nfs;
+        GETATTRCALL_NFS getattrcall_nfs;
+        SETATTRCALL_NFS setattrcall_nfs;
+        LOOKUPCALL_NFS lookupcall_nfs;
+        READLINKCALL_NFS readlinkcall_nfs;
+        READCALL_NFS readcall_nfs;
+        WRITECALL_NFS writecall_nfs;
+        CREATECALL_NFS createcall_nfs;
+        REMOVECALL_NFS removecall_nfs;
+        RENAMECALL_NFS renamecall_nfs;
+        LINKCALL_NFS linkcall_nfs;
+        SYMLINKCALL_NFS symlinkcall_nfs;
+        MKDIRCALL_NFS mkdircall_nfs;
+        RMDIRCALL_NFS rmdircall_nfs;
+        READDIRCALL_NFS readdircall_nfs;
+        STATFSCALL_NFS statfscall_nfs;
+        FSINFOCALL_NFS fsinfocall_nfs;
+        FSSTATCALL_NFS fsstatcall_nfs;
+        PATHCONFCALL_NFS pathconfcall_nfs;
+        SETCLIENTIDCALL_NFS setclientidcall_nfs;
+        SETCLIENTIDCONFIRMCALL_NFS setclientidconfirmcall_nfs;
+    } ptr;
+} CALLOPERATION_NFS;
+typedef struct {
+    uint32_t type;
+    union {
+        PUTFHREPLY_NFS putfhreply_nfs;
+        GETATTRREPLY_NFS getattrreply_nfs;
+        SETATTRREPLY_NFS setattrreply_nfs;
+        LOOKUPREPLY_NFS lookupreply_nfs;
+        READLINKREPLY_NFS readlinkreply_nfs;
+        READREPLY_NFS readreply_nfs;
+        WRITEREPLY_NFS writereply_nfs;
+        CREATEREPLY_NFS createreply_nfs;
+        REMOVEREPLY_NFS removereply_nfs;
+        RENAMEREPLY_NFS renamereply_nfs;
+        LINKREPLY_NFS linkreply_nfs;
+        SYMLINKREPLY_NFS symlinkreply_nfs;
+        MKDIRREPLY_NFS mkdirreply_nfs;
+        RMDIRREPLY_NFS rmdirreply_nfs;
+        READDIRREPLY_NFS readdirreply_nfs;
+        STATFSREPLY_NFS statfsreply_nfs;
+        FSINFOREPLY_NFS fsinforeply_nfs;
+        FSSTATREPLY_NFS fsstatreply_nfs;
+        PATHCONFREPLY_NFS pathconfreply_nfs;
+        SETCLIENTIDREPLY_NFS setclientidreply_nfs;
+        SETCLIENTIDCONFIRMREPLY_NFS setclientidconfirmreply_nfs;
+    } ptr;
+} REPLYOPERATION_NFS;
+typedef struct {
+    RPCCALL_NFS rpc;
+    uint32_t tag;
+    uint32_t minorversion;
+    uint32_t operationcount;
+    unsigned long operationslength;
+    unsigned long operationscount;
+    CALLOPERATION_NFS *operations;
+} PDUCALL_NFS;
+typedef struct {
+    RPCREPLY_NFS rpc;
+    uint32_t status;
+    uint32_t tag;
+    uint32_t operationcount;
+    unsigned long operationslength;
+    unsigned long operationscount;
+    REPLYOPERATION_NFS *operations;
+} PDUREPLY_NFS;
+typedef struct {
+    uint32_t type;
+    union {
+        PDUCALL_NFS pducall_nfs;
+        PDUREPLY_NFS pdureply_nfs;
+    } ptr;
+} PDU_NFS;
+bool parseNFS (PDU_NFS *pdu_nfs, PDU *thePDU, char *name, uint8_t endianness);
+void freePDU_NFS (PDU_NFS *mainpdu);
+#endif
