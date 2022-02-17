@@ -1,0 +1,12 @@
+Zeek also has something called "BinPAC"
+
+
+spciy exposes a C++ api that would let us integrate it into a fuzzer pretty nicely I think
+
+has hoisting
+
+"unit parameters" allow passing data to children
+
+enums also hold on to the original binary data, so that's good for fuzzing
+I haven't seen anything that loses information as we parse (unless we omit a field's name)
+
