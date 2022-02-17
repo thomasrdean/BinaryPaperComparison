@@ -2,66 +2,89 @@
 
 module DNS;
 
-print "in the dns module";
-
 import spicy;
 
-type RRType = enum {
-    A = 1, NS = 2, MD = 3, MF = 4, CNAME = 5, SOA = 6, MB = 7, MG = 8, MR = 9,
-    NULL = 10, WKS = 11, PTR = 12, HINFO = 13, MINFO = 14, MX = 15, TXT = 16,
-    AAAA = 28, NBS = 32, SRV= 33, A6 = 38, EDNS = 41 };
-
 public type PDU = unit {
-    id    : uint16;
+    transactionId    : uint16;
     flags : bytes &size=2;
 
-    qdcount: uint16;
-    ancount: uint16;
-    nscount: uint16;
-    arcount: uint16;
+    numQuestion: uint16;
+    numAnswer: uint16;
+    numAuthority: uint16;
+    numAdditional: uint16;
 
-    question:   Question[self.qdcount];
-    answer:     ResourceRecord[self.ancount];
-    authority:  ResourceRecord[self.nscount];
-    additional: ResourceRecord[self.arcount];
+    question:   Query[self.numQuestion];
+    answer:     ResourceRecord[self.numAnswer];
+    authority:  ResourceRecord[self.numAuthority];
+    additional: ResourceRecord[self.numAdditional];
     
     on %done { print self; }
 };
 
-type Question = unit {
-    qname:  Name;
-    qtype:  uint16;
-    qclass: uint16;
+type Query = unit {
+    name:  Domain;
+    type_:  uint16;
+    class: uint16;
 };
 
 type ResourceRecord = unit() {
-    name:   Name;
-    type_:     uint16 &convert=RRType($$);
+    name:   Domain;
+    type_:  uint16 &convert=RRType($$);
     class:  uint16;
     ttl:    uint32;
-    rdlen:  uint16;
+    dataLength:  uint16;
 
     switch ( self.type_ ) {
-        RRType::NS, RRType::CNAME, RRType::PTR
-                     -> rr_body_rname:   Name;
         RRType::A    -> rr_body_a:       addr &ipv4;
-        RRType::AAAA -> rr_body_a:       addr &ipv6;
-        RRType::MX   -> rr_body_mx:      RDataMX;
+        RRType::NS   -> rr_body_nameServer:   Domain;
+        RRType::CNAME-> rr_body_cname: Domain;
         RRType::SOA  -> rr_body_soa:     RDataSOA;
-        RRType::SRV  -> rr_body_srv:     RDataSRV;
+        RRType::PTR  -> rr_body_domainName: Domain;
+        RRType::MX   -> rr_body_mx:      RDataMX;
         RRType::TXT  -> rr_body_txt:     CharacterString;
-        *            -> rdata:   bytes &size=self.rdlen;
+        RRType::AAAA -> rr_body_a:       addr &ipv6;
+        # OPT
+        # DS
+        # KEY
+        # RRSIG
+        # NSEC3
+        RRType::SRV  -> rr_body_srv:     RDataSRV;
+        *            -> rdata:   bytes &size=self.dataLength;
     };
+};
+
+type RRType = enum {
+    A = 1,
+    NS = 2,
+    MD = 3,
+    MF = 4,
+    CNAME = 5,
+    SOA = 6,
+    MB = 7,
+    MG = 8,
+    MR = 9,
+    NULL = 10,
+    WKS = 11,
+    PTR = 12,
+    HINFO = 13,
+    MINFO = 14,
+    MX = 15,
+    TXT = 16,
+    AAAA = 28,
+    NBS = 32,
+    SRV= 33,
+    A6 = 38,
+    EDNS = 41
 };
 
 type RDataMX = unit {
     preference: uint16;
-    name:        Name;
+    name:        Domain;
 };
 
 type RDataSOA = unit {
-    mname:      Name;
-    rname:      Name;
+    mname:      Domain;
+    rname:      Domain;
     serial:     uint32;
     refresh:    uint32 &convert=cast<interval>($$);
     retry:      uint32 &convert=cast<interval>($$);
@@ -73,7 +96,7 @@ type RDataSRV = unit {
     priority_:  uint16;
     weight:     uint16;
     port_:      uint16;
-    target:     Name;
+    target:     Domain;
 };
 
 type CharacterString = unit {
@@ -81,7 +104,7 @@ type CharacterString = unit {
     data: bytes &size=(self.len);
 };
 
-type Name = unit {
+type Domain = unit {
     words: Label[] &until=($$.len.offset == 0 || $$.len.compressed != 0);
 };
 
