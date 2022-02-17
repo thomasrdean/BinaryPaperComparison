@@ -39,7 +39,8 @@ for pcap_element in pcap_elements:
     run_result = subprocess.run(["spicy-driver", "dns.hlto"], stdout=subprocess.PIPE, input=dns_bin)
     result = run_result.stdout.decode('ascii')
     assert run_result.returncode == 0
-    print("result:", result)
+    if result != "":
+      print("result:", result)
     num_parsed += 1
   except Exception as e:
     print(e)
