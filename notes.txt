@@ -45,5 +45,7 @@ Note:
 
 Spicy: I should write a make file to automate caching compiled grammars
 
+Note: spicy (and other parsers) have a habit of throwing away null bytes and other delimiters, which feels gross to me if we intend to serialize the resulting object...
+
 I need to pick a consistent ordering and field naming etc...
 
