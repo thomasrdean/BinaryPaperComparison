@@ -1,36 +1,17 @@
-# Taken from: https://github.com/zeek/spicy-dns/blob/main/analyzer/analyzer.spicy
-
-
 # Copyright (c) 2021 by the Zeek Project. See LICENSE for details.
 
 module DNS;
 
 import spicy;
 
-type RDType = enum {
+type RRType = enum {
     A = 1, NS = 2, MD = 3, MF = 4, CNAME = 5, SOA = 6, MB = 7, MG = 8, MR = 9,
     NULL = 10, WKS = 11, PTR = 12, HINFO = 13, MINFO = 14, MX = 15, TXT = 16,
     AAAA = 28, NBS = 32, SRV= 33, A6 = 38, EDNS = 41 };
 
-type RRType = enum {
-    ANSWER = 1, AUTH = 2, ADDL = 3
-};
-
 public type Message = unit {
     %random-access;
 
-    header:     Header;
-    question:   (Question(self))[self.header.qdcount];
-    answer:     (ResourceRecord(self, RRType::ANSWER))[self.header.ancount];
-    authority:  (ResourceRecord(self, RRType::AUTH))[self.header.nscount];
-    additional: (ResourceRecord(self, RRType::ADDL))[self.header.arcount];
-
-    on %done {
-        print self;
-    }
-};
-
-type Header = unit {
     id    : uint16;
     flags : bitfield(16) {
             qr: 0;
@@ -48,45 +29,31 @@ type Header = unit {
     nscount: uint16;
     arcount: uint16;
 
-    var rejected : bool;
-
-    on %done {
-        # Mimic Zeek in determining when a request has been rejected.
-        if ( self.qdcount == 0 )
-            self.rejected = (self.flags.rcode != 0); # 0 == NoError;
-
-        else
-            self.rejected = (self.flags.qr == 1 &&
-                             self.ancount == 0 &&
-                             self.nscount == 0 &&
-                             self.arcount == 0);
-    }
+    question:   (Question(self))[self.qdcount];
+    answer:     (ResourceRecord(self, RRType::ANSWER))[self.ancount];
+    authority:  (ResourceRecord(self, RRType::AUTH))[self.nscount];
+    additional: (ResourceRecord(self, RRType::ADDL))[self.arcount];
 };
 
-type Question = unit(msg: Message) {
-    qname:  Name(msg);
+type Question = unit() {
+    qname:  Name();
     qtype:  uint16;
     qclass: uint16;
 };
 
-type ResourceRecord = unit(msg: Message, rrtype: RRType) {
+type ResourceRecord = unit() {
     name:   Name(msg);
-    ty:     uint16 &convert=RDType($$);
-    class:  uint16;
-    ttl:    uint32 &convert=cast<interval>($$);
-    rdlen:  uint16;
+    type_:     uint16 &convert=RRType($$);
 
-    switch ( self.ty ) {
-        RDType::NS, RDType::CNAME, RDType::PTR
-                     -> rname:   Name(msg);
-        RDType::A    -> a:       addr &ipv4;
-        RDType::AAAA -> a:       addr &ipv6;
-        RDType::MX   -> mx:      RDataMX(msg);
-        RDType::SOA  -> soa:     RDataSOA(msg);
-        RDType::SRV  -> srv:     RDataSRV(msg);
-        RDType::TXT  -> txt:     (CharacterString(msg))[self.rdlen];
-
-        *            -> rdata:   bytes &size=self.rdlen;
+    switch ( self.type_ ) {
+        RRType::NS, RRType::CNAME, RRType::PTR
+                     -> rr_body_rname:   Name(msg);
+        RRType::A    -> rr_body_a:       addr &ipv4;
+        RRType::AAAA -> rr_body_a:       addr &ipv6;
+        RRType::MX   -> rr_body_mx:      RDataMX(msg);
+        RRType::SOA  -> rr_body_soa:     RDataSOA(msg);
+        RRType::SRV  -> rr_body_srv:     RDataSRV(msg);
+        RRType::TXT  -> rr_body_txt:     (CharacterString(msg))[self.rdlen];
     };
 };
 
