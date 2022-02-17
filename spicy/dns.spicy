@@ -18,7 +18,7 @@ public type PDU = unit {
     authority:  ResourceRecord[self.numAuthority];
     additional: ResourceRecord[self.numAdditional];
     
-    on %done { print self; }
+    # on %done { print self; }
 };
 
 type Query = unit {
@@ -35,22 +35,28 @@ type ResourceRecord = unit() {
     dataLength:  uint16;
 
     switch ( self.type_ ) {
-        RRType::A    -> rr_body_a:       addr &ipv4;
-        RRType::NS   -> rr_body_nameServer:   Domain;
-        RRType::CNAME-> rr_body_cname: Domain;
+        RRType::A    -> address:    bytes &size=4;
+        RRType::NS   -> nameServer:   Domain;
+        RRType::CNAME-> cname: Domain;
         RRType::SOA  -> rr_body_soa:     RDataSOA;
-        RRType::PTR  -> rr_body_domainName: Domain;
+        RRType::PTR  -> domainName: Domain;
         RRType::MX   -> rr_body_mx:      RDataMX;
-        RRType::TXT  -> rr_body_txt:     CharacterString;
-        RRType::AAAA -> rr_body_a:       addr &ipv6;
+        RRType::TXT  -> text:     PascalString;
+        RRType::AAAA -> address:    bytes &size=16;
         # OPT
         # DS
         # KEY
         # RRSIG
         # NSEC3
-        RRType::SRV  -> rr_body_srv:     RDataSRV;
-        *            -> rdata:   bytes &size=self.dataLength;
+        *            -> rdata:   Default;
     };
+};
+
+type Default = unit {
+    bytes &size=self.dataLength;
+    on % done {
+        print "defaulted on ";
+    }
 };
 
 type RRType = enum {
@@ -92,14 +98,7 @@ type RDataSOA = unit {
     minimum:    uint32 &convert=cast<interval>($$);
 };
 
-type RDataSRV = unit {
-    priority_:  uint16;
-    weight:     uint16;
-    port_:      uint16;
-    target:     Domain;
-};
-
-type CharacterString = unit {
+type PascalString = unit {
     len: uint8;
     data: bytes &size=(self.len);
 };
