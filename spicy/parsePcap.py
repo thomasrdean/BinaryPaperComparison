@@ -28,11 +28,6 @@ def pcap_element_to_dns(pcap_element):
   dns = udp.data
   return dns
 
-# Pre-compile for better performance
-run_result = subprocess.run(["spicyc", "-j", "-o", "dns.hlto", "dns.spicy"], stdout=subprocess.PIPE)
-result = run_result.stdout.decode('ascii')
-assert run_result.returncode == 0
-
 for pcap_element in pcap_elements:
   dns_bin = pcap_element_to_dns(pcap_element)
   
@@ -46,8 +41,6 @@ for pcap_element in pcap_elements:
     assert run_result.returncode == 0
     print("result:", result)
     num_parsed += 1
-
-#    print(parsed_packet)
   except Exception as e:
     print(e)
     num_failed += 1
