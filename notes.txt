@@ -1,0 +1,49 @@
+Differences between grammars:
+    back-tracking
+    side-effects to build domain names and whatnot
+    stores parsing structure data (such as length fields) twice (redundantly) <- good for fuzzing
+    conditional inside a block/sequence/unit
+    explicit support for repeated structures
+        sets in SCL
+        Antlr sucks
+        arrays in most stuff...
+    enums
+        significant because we can indicate sub-type with a type field as an enum and that has a nice name instead of needing a proper sub-type
+    endianess
+    support for complex conditions
+        things like
+            "self.length % 3 == 0"
+            "hash(self.value) == self.hash"
+    logging in grammar
+        "{ print self }"
+    hoisting
+
+    what the parse tree looks like
+        fuzzing and ids wants it to be close to the docs
+        applications just need the data to be there
+        fuzzing cares less about memory usage and speed
+
+        maybe we want the data structure to be a bit more abstract so that we can write constraints about it
+        we definitely want both the grammar and parse tree to be simple for humans to udnerstand (which is not really important in compilers)
+
+Dean is very interested in key and alg being seperated.....
+
+I don't necessarily have to get all of dns to work for all of the grammars.
+
+Wireshark will look at a type field and then make the entire ResourceRecord have a sub-type after parsing it, for human-readability, which is not in the formal spec (FRC)
+    in IDS, there is callback c code that I think looks at types and then mutates subtrees to be of different types
+
+I think that inheritance of units/sequences/blocks could be an interesting idea...
+
+
+Note:
+    text resource record test field is constrained by both its first "len" byte and the dataLength field in the rr "header"
+
+    dns.spicy.original has RRType::SRV, but I'm pretty sure RFC3596 says it is deprecated
+
+    I could write "bytes &size=n" as "Bytes[n]" in spicy I think if I make a Bytes type...
+
+Spicy: I should write a make file to automate caching compiled grammars
+
+I need to pick a consistent ordering and field naming etc...
+
