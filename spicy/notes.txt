@@ -10,3 +10,6 @@ has hoisting
 enums also hold on to the original binary data, so that's good for fuzzing
 I haven't seen anything that loses information as we parse (unless we omit a field's name)
 
+Install spicy:
+https://docs.zeek.org/projects/spicy/en/latest/installation.html
+
