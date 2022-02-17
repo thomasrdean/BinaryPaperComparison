@@ -1,3 +1,14 @@
+For my paper:
+-what are the differences/properties of binary parser generators?
+-For each, what are the practical examples of grammar stuff that matters?
+-
+
+backtracking? -> type is after name in the dns grammar
+derived fields? -> can it compute the actual domain names as strings ("www.google.com")
+deparsers/serializers?
+can it return mulitple parses?
+
+
 Differences between grammars:
     back-tracking
     side-effects to build domain names and whatnot
