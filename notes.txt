@@ -8,6 +8,7 @@ derived fields? -> can it compute the actual domain names as strings ("www.googl
 deparsers/serializers?
 can it return mulitple parses?
 
+remember to talk about the capability to do non-byte aligned stuff in the paper... also offsets in the data stream
 
 Differences between grammars:
     back-tracking
