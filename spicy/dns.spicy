@@ -48,15 +48,8 @@ type ResourceRecord = unit() {
         # KEY
         # RRSIG
         # NSEC3
-        *            -> rdata:   Default;
+        *            -> rdata:   bytes &size=self.dataLength;
     };
-};
-
-type Default = unit {
-    bytes &size=self.dataLength;
-    on % done {
-        print "defaulted on ";
-    }
 };
 
 type RRType = enum {
