@@ -1,4 +1,4 @@
-grammar ARP;
+grammar DNS;
 
 @header {
 #include <fstream>
@@ -8,19 +8,24 @@ typedef unsigned int ipArray[4];
 #include <iostream>
 }
 
-arp:
+dns:
   transactionId=uint16
   flags=uint16
   numQuestion=uint16
   numAnswer=uint16
   numAuthority=uint16
   numAdditional=uint16
-  question=query
+  question=sequenceOfQuery[$numQuestion.val]
   answer=sequenceOfResourceRecord[$numAnswer.val]
   authority=sequenceOfResourceRecord[$numAuthority.val]
   additional=sequenceOfResourceRecord[$numAdditional.val]
-  { fprintf(stderr, "Successfully Parsed Packet!!!\n"); }
+  { fprintf(stderr, "Successfully Parsed DNS Packet!!!\n"); }
   ;
+
+sequenceOfQuery [int n]
+locals [int i =1; ]
+    : ( {$i <= $n}? query {$i++;} ) * {$i == $n}?
+    ;
 
 query:
   name=domain
@@ -30,7 +35,7 @@ query:
 
 domain
 locals [bool isTerminated = false;] // mutated in word rule
-  : ( {!$isTerminated}? word {$isTerminated = $word.isTerminator;} )*
+  : ( {!$isTerminated}? word {$isTerminated = $word.isTerminator;} )+ { $isTerminated }?
   ;
 
 word
@@ -42,7 +47,7 @@ returns [bool isTerminator = false]
 
 sequenceOfResourceRecord [int n]
 locals [int i =1; ]
-    : ( {$i <= $n}? resourceRecord {$i++;} ) *
+    : ( {$i <= $n}? resourceRecord {$i++;} ) * {$i == $n}?
     ;
 
 resourceRecord:
@@ -56,7 +61,7 @@ resourceRecord:
 
 blob [int n]
 locals [int i =1; ]
-    : ( {$i <= $n}? byte {$i++;} ) *
+    : ( {$i <= $n}? byte {$i++;} ) * {$i == $n}?
     ;
 
 character returns [char val]:
@@ -79,11 +84,11 @@ uint32 returns [uint32_t val]:
 
 byte returns [int val]:
   data=BYTE {
-    $val = $data.int;
-    fprintf(stderr, "eating: %x\n", $data.int);
+    $val = $data->getText()[0];
+    /* fprintf(stderr, "eating: %x\n", $data->getText()[0]); */
   };
 
-nullByte: BYTE {$BYTE.int == '\u0000'}? {fprintf(stderr, "recognizing null byte\n");} ;
-refByte: BYTE {$BYTE.int == '\u00c0'}? ;
+nullByte: BYTE {$BYTE->getText()[0] == 0x00}? { /* fprintf(stderr, "recognizing null byte\n"); */ } ;
+refByte: BYTE {$BYTE->getText()[0] == 0xc0}? ;
 
 BYTE: '\u0000'..'\u00FF';
