@@ -35,7 +35,7 @@ locals [bool isTerminated = false;] // mutated in word rule
 word
 returns [bool isTerminator = false]
   : '\u0000' {$isTerminator = true;}
-  | '\u00C0' reference=BYTE {$isTerminator = true;}
+  | '\u00C0' reference=byte {$isTerminator = true;}
   | length=uint8 blob[$length.val]
   ;
 
@@ -55,25 +55,31 @@ resourceRecord:
 
 blob [int n]
 locals [int i =1; ]
-    : ( {$i <= $n}? BYTE {$i++;} ) *
+    : ( {$i <= $n}? byte {$i++;} ) *
     ;
 
 character returns [char val]:
-  BYTE
-  {$val = (char) $BYTE.int;}
+  byte
+  {$val = (char) $byte.val;}
   ;
 
 uint8 returns [uint8_t val]:
-  b0=BYTE
-  {$val = $b0.int;}
+  b0=byte
+  {$val = $b0.val;}
   ;
 uint16 returns [uint16_t val]:
-  b0=BYTE b1=BYTE // assumes network (big endian) byte order
-  {$val = $b0.int << 8 || $b1.int;}
+  b0=byte b1=byte // assumes network (big endian) byte order
+  {$val = $b0.val << 8 || $b1.val;}
   ;
 uint32 returns [uint32_t val]:
-  b0=BYTE b1=BYTE b2=BYTE b3=BYTE
-  {$val = $b0.int << 24 || $b1.int << 16 || $b2.int << 8 || $b3.int;}
+  b0=byte b1=byte b2=byte b3=byte
+  {$val = $b0.val << 24 || $b1.val << 16 || $b2.val << 8 || $b3.val;}
   ;
 
-BYTE: data='\u0000'..'\u00FF' {fprintf(stderr, "%x", $data.int);};
+byte returns [int val]:
+  data=BYTE {
+    $val = $data.int;
+    fprintf(stderr, "eating: %x\n", $data.int);
+  };
+
+BYTE: '\u0000'..'\u00FF';
