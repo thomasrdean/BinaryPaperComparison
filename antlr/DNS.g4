@@ -29,18 +29,19 @@ query:
 
 domain
 locals [bool isTerminated = false;] // mutated in word rule
-  : ( {!$isTerminated}? word )*
+  : ( {!$isTerminated}? word {$isTerminated = $word.isTerminator;} )*
   ;
 
 word
-  : '\u0000' {$domain::isTerminated = true;}
-  | '\u00C0' reference=BYTE {$domain::isTerminated = true;}
+returns [bool isTerminator = false]
+  : '\u0000' {$isTerminator = true;}
+  | '\u00C0' reference=BYTE {$isTerminator = true;}
   | length=uint8 blob[$length.val]
   ;
 
 sequenceOfResourceRecord [int n]
 locals [int i =1; ]
-    : {std::cerr << n; } ( {$i <= $n}? resourceRecord {$i++;} ) *
+    : ( {$i <= $n}? resourceRecord {$i++;} ) *
     ;
 
 resourceRecord:
@@ -54,7 +55,7 @@ resourceRecord:
 
 blob [int n]
 locals [int i =1; ]
-    : {std::cout << n; } ( {$i <= $n}? BYTE {$i++;} ) *
+    : ( {$i <= $n}? BYTE {$i++;} ) *
     ;
 
 character returns [char val]:
@@ -75,4 +76,4 @@ uint32 returns [uint32_t val]:
   {$val = $b0.int << 24 || $b1.int << 16 || $b2.int << 8 || $b3.int;}
   ;
 
-BYTE: '\u0000'..'\u00FF';
+BYTE: data='\u0000'..'\u00FF' {fprintf(stderr, "%x", $data.int);};
