@@ -19,6 +19,7 @@ arp:
   answer=sequenceOfResourceRecord[$numAnswer.val]
   authority=sequenceOfResourceRecord[$numAuthority.val]
   additional=sequenceOfResourceRecord[$numAdditional.val]
+  { fprintf(stderr, "Successfully Parsed Packet!!!\n"); }
   ;
 
 query:
@@ -34,8 +35,8 @@ locals [bool isTerminated = false;] // mutated in word rule
 
 word
 returns [bool isTerminator = false]
-  : '\u0000' {$isTerminator = true;}
-  | '\u00C0' reference=byte {$isTerminator = true;}
+  : nullByte {$isTerminator = true;}
+  | refByte reference=byte {$isTerminator = true;}
   | length=uint8 blob[$length.val]
   ;
 
@@ -81,5 +82,8 @@ byte returns [int val]:
     $val = $data.int;
     fprintf(stderr, "eating: %x\n", $data.int);
   };
+
+nullByte: BYTE {$BYTE.int == '\u0000'}? {fprintf(stderr, "recognizing null byte\n");} ;
+refByte: BYTE {$BYTE.int == '\u00c0'}? ;
 
 BYTE: '\u0000'..'\u00FF';
