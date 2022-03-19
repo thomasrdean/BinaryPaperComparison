@@ -24,7 +24,7 @@ locals [i = 0]
 query:
   name=domain
   type_=uint16
-  class_=uint16 // change to "class"?
+  class_=uint16
   ;
 
 sequenceOfResourceRecord [n]
@@ -32,47 +32,47 @@ locals [i = 0]
     : ( {$i < $n}? resourceRecord {$i += 1} ) * {$i == $n}?
     ;
 
-// This approach seems to work
-// "parsed: 493 skipped: 16 failed: 0" in exactly 40 seconds
 resourceRecord:
   name=domain
-  body=rrBody
+  type_=uint16
+  body=rrBody[$type_.val]
   ;
-rrBody
-  : resourceRecordA
-  | resourceRecordAAAA
-  | resourceRecordCNAME
-  | resourceRecordSOA
-  | resourceRecordOPT
-  | resourceRecordNS
-  | resourceRecordKEY
-  | resourceRecordRRSIG
-  | resourceRecordDS
-  | resourceRecordNSEC3
+// this method is working (I manually verified all the fields in the first packet of dns.pcap
+// It is a bit slow: parses ~1 packet per second
+// "parsed: 493 skipped: 16 failed: 0"
+rrBody [type_]
+  :
+  {$type_ == 1}? rrBodyA
+  | {$type_ == 28}? rrBodyAAAA
+  | {$type_ == 5}? rrBodyCNAME
+  | {$type_ == 6}? rrBodySOA
+  | {$type_ == 41}? rrBodyOPT
+  | {$type_ == 2}? rrBodyNS
+  | {$type_ == 48}? rrBodyKEY
+  | {$type_ == 46}? rrBodyRRSIG
+  | {$type_ == 43}? rrBodyDS
+  | {$type_ == 50}? rrBodyNSEC3
   ;
-resourceRecordA:
-  type_=typeA
+
+rrBodyA:
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
   address=ipv4Address
   ;
-resourceRecordAAAA:
-  type_=typeAAAA
+rrBodyAAAA:
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
   address=ipv6Address
   ;
-resourceRecordCNAME:
-  type_=typeCNAME
+rrBodyCNAME:
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
   cname=domain
   ;
-resourceRecordSOA:
-  type_=typeSOA
+rrBodySOA:
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
@@ -84,27 +84,23 @@ resourceRecordSOA:
   expireLimit=uint32
   minimumTTL=uint32
   ;
-resourceRecordOPT:
-  type_=typeOPT
+rrBodyOPT:
   udpPayloadSize=uint16
   higherBitsInExtendedRcode=uint8
   EDNS0Version=uint8
   z=uint16
   dataLength=uint16
   ;
-resourceRecordNS:
-  type_=typeNS
+rrBodyNS:
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
   nameServer=domain
   ;
-resourceRecordKEY:
-  type_=typeKEY
+rrBodyKEY:
   class_=uint16
   ;
-resourceRecordRRSIG:
-  type_=typeRRSIG
+rrBodyRRSIG:
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
@@ -118,8 +114,7 @@ resourceRecordRRSIG:
   signName=domain
   signature=string[256]
   ;
-resourceRecordDS:
-  type_=typeDS
+rrBodyDS:
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
@@ -128,8 +123,7 @@ resourceRecordDS:
   digestType=uint8
   digest=string[32]
   ;
-resourceRecordNSEC3: // copied from Tom's SCL code, which he is unsure of
-  type_=typeNSEC3
+rrBodyNSEC3: // copied from Tom's SCL code, which he is unsure of
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
@@ -156,7 +150,8 @@ locals [isTerminated = False]
 word
 returns [isTerminator = False]
   : nullByte {$isTerminator = True}
-  | refByte reference=byte {$isTerminator = True}
+  | refByte reference=byte {$isTerminator = True} // if I comment this line then I get "parsed: 297 skipped: 16 failed: 196" in ~12 seconds!
+  // ^ so this line makes everything slow!!!!
   | length=uint8 string[$length.val]
   ;
 
@@ -195,18 +190,6 @@ uint32 returns [val]:
 nullByte: NULL_BYTE {print("eating: null byte")} ;
 refByte: REF_BYTE {print("eating: ref marker")} ;
 
-// Note that we can use '\u0000' safely (without screwing up the byte rule because it acts as an alias for BYTE
-typeA: '\u0000' data=TYPE_A {print("eating: type ", ord($data.text[0]))} ;
-typeAAAA: '\u0000' data=TYPE_AAAA {print("eating: type ", ord($data.text[0]))} ;
-typeCNAME: '\u0000' data=TYPE_CNAME {print("eating: type ", ord($data.text[0]))} ;
-typeSOA: '\u0000' data=TYPE_SOA {print("eating: type ", ord($data.text[0]))} ;
-typeOPT: '\u0000' data=TYPE_OPT {print("eating: type ", ord($data.text[0]))} ;
-typeNS: '\u0000' data=TYPE_NS {print("eating: type ", ord($data.text[0]))} ;
-typeKEY: '\u0000' data=TYPE_KEY {print("eating: type ", ord($data.text[0]))} ;
-typeRRSIG: '\u0000' data=TYPE_RRSIG {print("eating: type ", ord($data.text[0]))} ;
-typeDS: '\u0000' data=TYPE_DS {print("eating: type ", ord($data.text[0]))} ;
-typeNSEC3: '\u0000' data=TYPE_NSEC3 {print("eating: type ", ord($data.text[0]))} ;
-
 byte returns [val]
   : data=allTerminals
   {
@@ -217,33 +200,9 @@ print("eating:", hex($val))
 allTerminals
   : NULL_BYTE 
   | REF_BYTE
-
-  | TYPE_A
-  | TYPE_AAAA
-  | TYPE_CNAME
-  | TYPE_SOA
-  | TYPE_OPT
-  | TYPE_NS
-  | TYPE_KEY
-  | TYPE_RRSIG
-  | TYPE_DS
-  | TYPE_NSEC3
-
   | BYTE
   ;
 
 NULL_BYTE: '\u0000';
 REF_BYTE: '\u00c0';
-
-TYPE_A: '\u0001';
-TYPE_AAAA: '\u001c'; // 28
-TYPE_CNAME: '\u0005';
-TYPE_SOA: '\u0006';
-TYPE_OPT: '\u0029'; // 41
-TYPE_NS: '\u0002';
-TYPE_KEY: '\u0030'; // 48
-TYPE_RRSIG: '\u002e'; // 46
-TYPE_DS: '\u002b'; // 43
-TYPE_NSEC3: '\u0032'; // 50
-
 BYTE: '\u0000'..'\u00FF';
