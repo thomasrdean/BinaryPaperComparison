@@ -1,8 +1,5 @@
 grammar DNS;
 
-// This grammar is really fast: "real    0m12.463s"
-// "DNS Packets Parsed: 493" "Total Packets: 509"
-
 dns:
   transactionId=uint16
   flags=uint16
