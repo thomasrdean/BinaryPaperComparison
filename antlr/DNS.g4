@@ -1,6 +1,6 @@
 grammar DNS;
 
-// This grammar is slow: "real    6m35.411s"
+// This grammar is really fast: "real    0m12.463s"
 // "DNS Packets Parsed: 493" "Total Packets: 509"
 
 dns:
@@ -27,7 +27,7 @@ locals [int i = 0]
 query:
   name=domain
   type_=uint16
-  class_=uint16
+  class_=uint16 // change to "class"?
   ;
 
 sequenceOfResourceRecord [int n]
@@ -37,42 +37,43 @@ locals [int i = 0]
 
 resourceRecord:
   name=domain
-  type_=uint16
-  body=rrBody[$type_.val]
+  body=rrBody
   ;
-rrBody [int type_]
-  :
-  {$type_ == 1}? rrBodyA
-  | {$type_ == 28}? rrBodyAAAA
-  | {$type_ == 5}? rrBodyCNAME
-  | {$type_ == 6}? rrBodySOA
-  | {$type_ == 41}? rrBodyOPT
-  | {$type_ == 2}? rrBodyNS
-  | {$type_ == 48}? rrBodyKEY
-  | {$type_ == 46}? rrBodyRRSIG
-  | {$type_ == 43}? rrBodyDS
-  | {$type_ == 50}? rrBodyNSEC3
+rrBody
+  : resourceRecordA
+  | resourceRecordAAAA
+  | resourceRecordCNAME
+  | resourceRecordSOA
+  | resourceRecordOPT
+  | resourceRecordNS
+  | resourceRecordKEY
+  | resourceRecordRRSIG
+  | resourceRecordDS
+  | resourceRecordNSEC3
   ;
-
-rrBodyA:
+resourceRecordA:
+  type_=typeA
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
   address=ipv4Address
   ;
-rrBodyAAAA:
+resourceRecordAAAA:
+  type_=typeAAAA
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
   address=ipv6Address
   ;
-rrBodyCNAME:
+resourceRecordCNAME:
+  type_=typeCNAME
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
   cname=domain
   ;
-rrBodySOA:
+resourceRecordSOA:
+  type_=typeSOA
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
@@ -84,23 +85,27 @@ rrBodySOA:
   expireLimit=uint32
   minimumTTL=uint32
   ;
-rrBodyOPT:
+resourceRecordOPT:
+  type_=typeOPT
   udpPayloadSize=uint16
   higherBitsInExtendedRcode=uint8
   EDNS0Version=uint8
   z=uint16
   dataLength=uint16
   ;
-rrBodyNS:
+resourceRecordNS:
+  type_=typeNS
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
   nameServer=domain
   ;
-rrBodyKEY:
+resourceRecordKEY:
+  type_=typeKEY
   class_=uint16
   ;
-rrBodyRRSIG:
+resourceRecordRRSIG:
+  type_=typeRRSIG
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
@@ -114,7 +119,8 @@ rrBodyRRSIG:
   signName=domain
   signature=string[256]
   ;
-rrBodyDS:
+resourceRecordDS:
+  type_=typeDS
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
@@ -123,7 +129,8 @@ rrBodyDS:
   digestType=uint8
   digest=string[32]
   ;
-rrBodyNSEC3: // copied from Tom's SCL code, which he is unsure of
+resourceRecordNSEC3: // copied from Tom's SCL code, which he is unsure of
+  type_=typeNSEC3
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
@@ -189,19 +196,55 @@ uint32 returns [uint32_t val]:
 nullByte: NULL_BYTE {fprintf(stderr, "eating: null byte\n");} ;
 refByte: REF_BYTE {fprintf(stderr, "eating: ref marker\n");} ;
 
-byte returns [uint8_t val]
+// Note that we can use '\u0000' safely (without screwing up the byte rule because it acts as an alias for BYTE
+typeA: '\u0000' data=TYPE_A {fprintf(stderr, "eating: type A\n");} ;
+typeAAAA: '\u0000' data=TYPE_AAAA {fprintf(stderr, "eating: type AAAA\n");} ;
+typeCNAME: '\u0000' data=TYPE_CNAME {fprintf(stderr, "eating: type CNAME\n");} ;
+typeSOA: '\u0000' data=TYPE_SOA {fprintf(stderr, "eating: type SOA\n");} ;
+typeOPT: '\u0000' data=TYPE_OPT {fprintf(stderr, "eating: type OPT\n");} ;
+typeNS: '\u0000' data=TYPE_NS {fprintf(stderr, "eating: type NS\n");} ;
+typeKEY: '\u0000' data=TYPE_KEY {fprintf(stderr, "eating: type KEY\n");} ;
+typeRRSIG: '\u0000' data=TYPE_RRSIG {fprintf(stderr, "eating: type RRSIG\n");} ;
+typeDS: '\u0000' data=TYPE_DS {fprintf(stderr, "eating: type DS");} ;
+typeNSEC3: '\u0000' data=TYPE_NSEC3 {fprintf(stderr, "eating: type NSEC3\n");} ;
+
+byte returns [int val]
   : data=allTerminals
   {
-$val = (int) $data.text[0];
+$val = $data.text[0];
 fprintf(stderr, "eating: %x\n", $val);
   };
 
 allTerminals
   : NULL_BYTE 
   | REF_BYTE
+
+  | TYPE_A
+  | TYPE_AAAA
+  | TYPE_CNAME
+  | TYPE_SOA
+  | TYPE_OPT
+  | TYPE_NS
+  | TYPE_KEY
+  | TYPE_RRSIG
+  | TYPE_DS
+  | TYPE_NSEC3
+
   | BYTE
   ;
 
 NULL_BYTE: '\u0000';
 REF_BYTE: '\u00c0';
+
+TYPE_A: '\u0001';
+TYPE_AAAA: '\u001c'; // 28
+TYPE_CNAME: '\u0005';
+TYPE_SOA: '\u0006';
+TYPE_OPT: '\u0029'; // 41
+TYPE_NS: '\u0002';
+TYPE_KEY: '\u0030'; // 48
+TYPE_RRSIG: '\u002e'; // 46
+TYPE_DS: '\u002b'; // 43
+TYPE_NSEC3: '\u0032'; // 50
+
 BYTE: '\u0000'..'\u00FF';
