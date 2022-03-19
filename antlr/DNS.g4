@@ -1,5 +1,8 @@
 grammar DNS;
 
+// This grammar is slow: "real    6m35.411s"
+// "DNS Packets Parsed: 493" "Total Packets: 509"
+
 dns:
   transactionId=uint16
   flags=uint16
@@ -12,13 +15,13 @@ dns:
   authority=sequenceOfResourceRecord[$numAuthority.val]
   additional=sequenceOfResourceRecord[$numAdditional.val]
   {
-print("Successfully Parsed DNS Packet!!!")
+fprintf(stderr, "Successfully Parsed DNS Packet!!!\n");
   }
   ;
 
-sequenceOfQuery [n]
-locals [i = 0]
-    : ( {$i < $n}? query {$i += 1} ) * {$i == $n}?
+sequenceOfQuery [int n]
+locals [int i = 0]
+    : ( {$i < $n}? query {$i++;} ) * {$i == $n}?
     ;
 
 query:
@@ -27,9 +30,9 @@ query:
   class_=uint16
   ;
 
-sequenceOfResourceRecord [n]
-locals [i = 0]
-    : ( {$i < $n}? resourceRecord {$i += 1} ) * {$i == $n}?
+sequenceOfResourceRecord [int n]
+locals [int i = 0]
+    : ( {$i < $n}? resourceRecord {$i++;} ) * {$i == $n}?
     ;
 
 resourceRecord:
@@ -37,10 +40,7 @@ resourceRecord:
   type_=uint16
   body=rrBody[$type_.val]
   ;
-// this method is working (I manually verified all the fields in the first packet of dns.pcap
-// It is a bit slow: parses ~1 packet per second
-// "parsed: 493 skipped: 16 failed: 0"
-rrBody [type_]
+rrBody [int type_]
   :
   {$type_ == 1}? rrBodyA
   | {$type_ == 28}? rrBodyAAAA
@@ -143,58 +143,57 @@ map_:
   ;
 
 domain
-locals [isTerminated = False]
-  : ( {not $isTerminated}? word {$isTerminated = $word.isTerminator} )+ { $isTerminated }?
+locals [bool isTerminated = false]
+  : ( {!$isTerminated}? word {$isTerminated = $word.isTerminator;} )+ { $isTerminated }?
   ;
 
 word
-returns [isTerminator = False]
-  : nullByte {$isTerminator = True}
-  | refByte reference=byte {$isTerminator = True} // if I comment this line then I get "parsed: 297 skipped: 16 failed: 196" in ~12 seconds!
-  // ^ so this line makes everything slow!!!!
+returns [bool isTerminator = false]
+  : nullByte {$isTerminator = true;}
+  | refByte reference=byte {$isTerminator = true;}
   | length=uint8 string[$length.val]
   ;
 
-string [n]
-locals [i = 0]
-    : ( {$i < $n}? character {$i += 1} ) * {$i == $n}?
+string [int n]
+locals [int i = 0]
+    : ( {$i < $n}? character {$i++;} ) * {$i == $n}?
     ;
 
-character returns [val]:
+character returns [char val]:
   byte
-  {$val = chr($byte.val)}
+  {$val = (char) $byte.val;}
   ;
 
 ipv4Address: blob[4];
 
 ipv6Address: blob[16];
 
-blob [n]
-locals [i = 0]
-    : ( {$i < $n}? byte {$i += 1} ) * {$i == $n}?
+blob [int n]
+locals [int i = 0]
+    : ( {$i < $n}? byte {$i++;} ) * {$i == $n}?
     ;
 
-uint8 returns [val]:
+uint8 returns [uint8_t val]:
   b0=byte
-  {$val = $b0.val}
+  {$val = $b0.val;}
   ;
-uint16 returns [val]:
+uint16 returns [uint16_t val]:
   b0=byte b1=byte // assumes network (big endian) byte order
-  {$val = $b0.val << 8 | $b1.val}
+  {$val = $b0.val << 8 | $b1.val;}
   ;
-uint32 returns [val]:
+uint32 returns [uint32_t val]:
   b0=byte b1=byte b2=byte b3=byte
-  {$val = $b0.val << 24 | $b1.val << 16 | $b2.val << 8 | $b3.val}
+  {$val = $b0.val << 24 | $b1.val << 16 | $b2.val << 8 | $b3.val;}
   ;
 
-nullByte: NULL_BYTE {print("eating: null byte")} ;
-refByte: REF_BYTE {print("eating: ref marker")} ;
+nullByte: NULL_BYTE {fprintf(stderr, "eating: null byte\n");} ;
+refByte: REF_BYTE {fprintf(stderr, "eating: ref marker\n");} ;
 
-byte returns [val]
+byte returns [uint8_t val]
   : data=allTerminals
   {
-$val = ord($data.text[0])
-print("eating:", hex($val))
+$val = (int) $data.text[0];
+fprintf(stderr, "eating: %x\n", $val);
   };
 
 allTerminals
