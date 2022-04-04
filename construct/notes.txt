@@ -1,0 +1,27 @@
+Construct:
+https://construct.readthedocs.io/en/latest/streaming.html
+
+-used by Kaitai Struct compiler?
+-serialization library
+-a grammar is just a bunch of constructors with some parameters
+-definitely powerful enough
+-supports some extra stuff that might get in our way such as computed values in the AST (not in the input stream or output stream)
+-supports jumping around in the input stream (might actually be useful for something like domain names in DNS?)
+-`ByteSwapped()` allows for swapping endianess mid-parse
+-shouldn't need custom stuff, but if we really do, it looks straightforward:
+  ```
+  class MyAdapter(Adapter):
+    def _decode(self, obj, context, path):
+        # called at parsing time to return a modified version of obj
+        pass
+
+    def _encode(self, obj, context, path):
+        # called at building time to return a modified version of obj
+        pass
+  ```
+-Has expiremental compiling support, but "Compilation has only one purpose: performance."
+-for some reason code is in massive files... like 6000 lines :(
+-it definitely keeps counts around
+-I'm pretty sure it doesn't keep the input bits around, but it wouldn't be difficult to modify it to keep them around...!!
+-docs are nice
+-master is just over a month old
