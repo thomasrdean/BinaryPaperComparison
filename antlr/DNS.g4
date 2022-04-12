@@ -12,7 +12,7 @@ dns:
   authority=sequenceOfResourceRecord[$numAuthority.val]
   additional=sequenceOfResourceRecord[$numAdditional.val]
   {
-fprintf(stderr, "Successfully Parsed DNS Packet!!!\n");
+    fprintf(stderr, "Successfully Parsed DNS Packet!!!\n");
   }
   ;
 
