@@ -1,0 +1,1 @@
+ls -hlt ../../Tom/ANTLR4/binary/grammars/DNS.* | awk '{ print $9 }' | tac | while read f; do echo $f; cp $f ./DNS.g4 && git add ./DNS.g4 && f_name=$(basename $f) && msg="${f_name:4:-3}" && git commit -m "antlr dns work: $msg"; done
