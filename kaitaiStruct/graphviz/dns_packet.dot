@@ -1,0 +1,293 @@
+digraph {
+	rankdir=LR;
+	node [shape=plaintext];
+	subgraph cluster__dns_packet {
+		label="DnsPacket";
+		graph[style=dotted];
+
+		dns_packet__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+			<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+			<TR><TD PORT="transaction_id_pos">0</TD><TD PORT="transaction_id_size">2</TD><TD>u2be</TD><TD PORT="transaction_id_type">transaction_id</TD></TR>
+			<TR><TD PORT="flags_pos">2</TD><TD PORT="flags_size">2</TD><TD>u2be</TD><TD PORT="flags_type">flags</TD></TR>
+			<TR><TD PORT="qdcount_pos">4</TD><TD PORT="qdcount_size">2</TD><TD>u2be</TD><TD PORT="qdcount_type">qdcount</TD></TR>
+			<TR><TD PORT="ancount_pos">6</TD><TD PORT="ancount_size">2</TD><TD>u2be</TD><TD PORT="ancount_type">ancount</TD></TR>
+			<TR><TD PORT="nscount_pos">8</TD><TD PORT="nscount_size">2</TD><TD>u2be</TD><TD PORT="nscount_type">nscount</TD></TR>
+			<TR><TD PORT="arcount_pos">10</TD><TD PORT="arcount_size">2</TD><TD>u2be</TD><TD PORT="arcount_type">arcount</TD></TR>
+			<TR><TD PORT="queries_pos">12</TD><TD PORT="queries_size">...</TD><TD>Query</TD><TD PORT="queries_type">queries</TD></TR>
+			<TR><TD COLSPAN="4" PORT="queries__repeat">repeat qdcount times</TD></TR>
+			<TR><TD PORT="answers_pos">...</TD><TD PORT="answers_size">...</TD><TD>ResourceRecord</TD><TD PORT="answers_type">answers</TD></TR>
+			<TR><TD COLSPAN="4" PORT="answers__repeat">repeat ancount times</TD></TR>
+			<TR><TD PORT="authorities_pos">...</TD><TD PORT="authorities_size">...</TD><TD>ResourceRecord</TD><TD PORT="authorities_type">authorities</TD></TR>
+			<TR><TD COLSPAN="4" PORT="authorities__repeat">repeat nscount times</TD></TR>
+			<TR><TD PORT="additionals_pos">...</TD><TD PORT="additionals_size">...</TD><TD>ResourceRecord</TD><TD PORT="additionals_type">additionals</TD></TR>
+			<TR><TD COLSPAN="4" PORT="additionals__repeat">repeat arcount times</TD></TR>
+		</TABLE>>];
+		subgraph cluster__map_ {
+			label="DnsPacket::Map";
+			graph[style=dotted];
+
+			map___seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="map_num_pos">0</TD><TD PORT="map_num_size">1</TD><TD>u1</TD><TD PORT="map_num_type">map_num</TD></TR>
+				<TR><TD PORT="length_pos">1</TD><TD PORT="length_size">1</TD><TD>u1</TD><TD PORT="length_type">length</TD></TR>
+				<TR><TD PORT="map_bits_pos">2</TD><TD PORT="map_bits_size">length</TD><TD>str(utf-8)</TD><TD PORT="map_bits_type">map_bits</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__resource_record {
+			label="DnsPacket::ResourceRecord";
+			graph[style=dotted];
+
+			resource_record__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="name_pos">0</TD><TD PORT="name_size">...</TD><TD>Domain</TD><TD PORT="name_type">name</TD></TR>
+				<TR><TD PORT="type_pos">...</TD><TD PORT="type_size">2</TD><TD>u2be→RrType</TD><TD PORT="type_type">type</TD></TR>
+				<TR><TD PORT="body_pos">...</TD><TD PORT="body_size">...</TD><TD>switch (type)</TD><TD PORT="body_type">body</TD></TR>
+			</TABLE>>];
+resource_record__seq_body_switch [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+	<TR><TD BGCOLOR="#F0F2E4">case</TD><TD BGCOLOR="#F0F2E4">type</TD></TR>
+	<TR><TD>:rr_type_a</TD><TD PORT="case0">RrBodyA</TD></TR>
+	<TR><TD>:rr_type_ds</TD><TD PORT="case1">RrBodyDs</TD></TR>
+	<TR><TD>:rr_type_ns</TD><TD PORT="case2">RrBodyNs</TD></TR>
+	<TR><TD>:rr_type_key</TD><TD PORT="case3">RrBodyKey</TD></TR>
+	<TR><TD>:rr_type_cname</TD><TD PORT="case4">RrBodyCname</TD></TR>
+	<TR><TD>:rr_type_opt</TD><TD PORT="case5">RrBodyOpt</TD></TR>
+	<TR><TD>:rr_type_rrsig</TD><TD PORT="case6">RrBodyRrsig</TD></TR>
+	<TR><TD>:rr_type_nsec3</TD><TD PORT="case7">RrBodyNsec3</TD></TR>
+	<TR><TD>:rr_type_aaaa</TD><TD PORT="case8">RrBodyAaaa</TD></TR>
+	<TR><TD>:rr_type_soa</TD><TD PORT="case9">RrBodySoa</TD></TR>
+</TABLE>>];
+		}
+		subgraph cluster__rr_body_opt {
+			label="DnsPacket::RrBodyOpt";
+			graph[style=dotted];
+
+			rr_body_opt__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="udp_payload_size_pos">0</TD><TD PORT="udp_payload_size_size">2</TD><TD>u2be</TD><TD PORT="udp_payload_size_type">udp_payload_size</TD></TR>
+				<TR><TD PORT="higher_bits_in_extended_rcode_pos">2</TD><TD PORT="higher_bits_in_extended_rcode_size">1</TD><TD>u1</TD><TD PORT="higher_bits_in_extended_rcode_type">higher_bits_in_extended_rcode</TD></TR>
+				<TR><TD PORT="edns0version_pos">3</TD><TD PORT="edns0version_size">1</TD><TD>u1</TD><TD PORT="edns0version_type">edns0version</TD></TR>
+				<TR><TD PORT="z_pos">4</TD><TD PORT="z_size">2</TD><TD>u2be</TD><TD PORT="z_type">z</TD></TR>
+				<TR><TD PORT="data_length_pos">6</TD><TD PORT="data_length_size">2</TD><TD>u2be</TD><TD PORT="data_length_type">data_length</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__rr_body_key {
+			label="DnsPacket::RrBodyKey";
+			graph[style=dotted];
+
+			rr_body_key__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="class__pos">0</TD><TD PORT="class__size">2</TD><TD>u2be</TD><TD PORT="class__type">class_</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__domain {
+			label="DnsPacket::Domain";
+			graph[style=dotted];
+
+			domain__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="name_pos">0</TD><TD PORT="name_size">...</TD><TD>Word</TD><TD PORT="name_type">name</TD></TR>
+				<TR><TD COLSPAN="4" PORT="name__repeat">repeat until  ((_.length == 0) || (_.length &gt;= 192)) </TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__ipv6_address {
+			label="DnsPacket::Ipv6Address";
+			graph[style=dotted];
+
+			ipv6_address__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="ip_v6_pos">0</TD><TD PORT="ip_v6_size">16</TD><TD></TD><TD PORT="ip_v6_type">ip_v6</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__query {
+			label="DnsPacket::Query";
+			graph[style=dotted];
+
+			query__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="name_pos">0</TD><TD PORT="name_size">...</TD><TD>Domain</TD><TD PORT="name_type">name</TD></TR>
+				<TR><TD PORT="type_pos">...</TD><TD PORT="type_size">2</TD><TD>u2be→RrType</TD><TD PORT="type_type">type</TD></TR>
+				<TR><TD PORT="query_class_pos">...</TD><TD PORT="query_class_size">2</TD><TD>u2be</TD><TD PORT="query_class_type">query_class</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__rr_body_rrsig {
+			label="DnsPacket::RrBodyRrsig";
+			graph[style=dotted];
+
+			rr_body_rrsig__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="class__pos">0</TD><TD PORT="class__size">2</TD><TD>u2be</TD><TD PORT="class__type">class_</TD></TR>
+				<TR><TD PORT="time_to_live_pos">2</TD><TD PORT="time_to_live_size">4</TD><TD>u4be</TD><TD PORT="time_to_live_type">time_to_live</TD></TR>
+				<TR><TD PORT="data_length_pos">6</TD><TD PORT="data_length_size">2</TD><TD>u2be</TD><TD PORT="data_length_type">data_length</TD></TR>
+				<TR><TD PORT="type_cov_pos">8</TD><TD PORT="type_cov_size">2</TD><TD>u2be</TD><TD PORT="type_cov_type">type_cov</TD></TR>
+				<TR><TD PORT="alg_pos">10</TD><TD PORT="alg_size">1</TD><TD>u1</TD><TD PORT="alg_type">alg</TD></TR>
+				<TR><TD PORT="labels_pos">11</TD><TD PORT="labels_size">1</TD><TD>u1</TD><TD PORT="labels_type">labels</TD></TR>
+				<TR><TD PORT="orig_time_to_live_pos">12</TD><TD PORT="orig_time_to_live_size">4</TD><TD>u4be</TD><TD PORT="orig_time_to_live_type">orig_time_to_live</TD></TR>
+				<TR><TD PORT="sig_exp_pos">16</TD><TD PORT="sig_exp_size">4</TD><TD>u4be</TD><TD PORT="sig_exp_type">sig_exp</TD></TR>
+				<TR><TD PORT="sig_inception_pos">20</TD><TD PORT="sig_inception_size">4</TD><TD>u4be</TD><TD PORT="sig_inception_type">sig_inception</TD></TR>
+				<TR><TD PORT="key_tag_pos">24</TD><TD PORT="key_tag_size">2</TD><TD>u2be</TD><TD PORT="key_tag_type">key_tag</TD></TR>
+				<TR><TD PORT="sign_name_pos">26</TD><TD PORT="sign_name_size">...</TD><TD>Domain</TD><TD PORT="sign_name_type">sign_name</TD></TR>
+				<TR><TD PORT="signature_pos">...</TD><TD PORT="signature_size">256</TD><TD>str(utf-8)</TD><TD PORT="signature_type">signature</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__ipv4_address {
+			label="DnsPacket::Ipv4Address";
+			graph[style=dotted];
+
+			ipv4_address__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="ip_pos">0</TD><TD PORT="ip_size">4</TD><TD></TD><TD PORT="ip_type">ip</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__rr_body_cname {
+			label="DnsPacket::RrBodyCname";
+			graph[style=dotted];
+
+			rr_body_cname__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="class__pos">0</TD><TD PORT="class__size">2</TD><TD>u2be</TD><TD PORT="class__type">class_</TD></TR>
+				<TR><TD PORT="time_to_live_pos">2</TD><TD PORT="time_to_live_size">4</TD><TD>u4be</TD><TD PORT="time_to_live_type">time_to_live</TD></TR>
+				<TR><TD PORT="data_length_pos">6</TD><TD PORT="data_length_size">2</TD><TD>u2be</TD><TD PORT="data_length_type">data_length</TD></TR>
+				<TR><TD PORT="cname_pos">8</TD><TD PORT="cname_size">...</TD><TD>Domain</TD><TD PORT="cname_type">cname</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__rr_body_aaaa {
+			label="DnsPacket::RrBodyAaaa";
+			graph[style=dotted];
+
+			rr_body_aaaa__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="class__pos">0</TD><TD PORT="class__size">2</TD><TD>u2be</TD><TD PORT="class__type">class_</TD></TR>
+				<TR><TD PORT="time_to_live_pos">2</TD><TD PORT="time_to_live_size">4</TD><TD>u4be</TD><TD PORT="time_to_live_type">time_to_live</TD></TR>
+				<TR><TD PORT="data_length_pos">6</TD><TD PORT="data_length_size">2</TD><TD>u2be</TD><TD PORT="data_length_type">data_length</TD></TR>
+				<TR><TD PORT="address_pos">8</TD><TD PORT="address_size">16</TD><TD>Ipv6Address</TD><TD PORT="address_type">address</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__rr_body_ns {
+			label="DnsPacket::RrBodyNs";
+			graph[style=dotted];
+
+			rr_body_ns__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="class__pos">0</TD><TD PORT="class__size">2</TD><TD>u2be</TD><TD PORT="class__type">class_</TD></TR>
+				<TR><TD PORT="time_to_live_pos">2</TD><TD PORT="time_to_live_size">4</TD><TD>u4be</TD><TD PORT="time_to_live_type">time_to_live</TD></TR>
+				<TR><TD PORT="data_length_pos">6</TD><TD PORT="data_length_size">2</TD><TD>u2be</TD><TD PORT="data_length_type">data_length</TD></TR>
+				<TR><TD PORT="name_server_pos">8</TD><TD PORT="name_server_size">...</TD><TD>Domain</TD><TD PORT="name_server_type">name_server</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__rr_body_ds {
+			label="DnsPacket::RrBodyDs";
+			graph[style=dotted];
+
+			rr_body_ds__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="class__pos">0</TD><TD PORT="class__size">2</TD><TD>u2be</TD><TD PORT="class__type">class_</TD></TR>
+				<TR><TD PORT="time_to_live_pos">2</TD><TD PORT="time_to_live_size">4</TD><TD>u4be</TD><TD PORT="time_to_live_type">time_to_live</TD></TR>
+				<TR><TD PORT="data_length_pos">6</TD><TD PORT="data_length_size">2</TD><TD>u2be</TD><TD PORT="data_length_type">data_length</TD></TR>
+				<TR><TD PORT="keyid_pos">8</TD><TD PORT="keyid_size">2</TD><TD>u2be</TD><TD PORT="keyid_type">keyid</TD></TR>
+				<TR><TD PORT="alg_pos">10</TD><TD PORT="alg_size">1</TD><TD>u1</TD><TD PORT="alg_type">alg</TD></TR>
+				<TR><TD PORT="digest_type_pos">11</TD><TD PORT="digest_type_size">1</TD><TD>u1</TD><TD PORT="digest_type_type">digest_type</TD></TR>
+				<TR><TD PORT="digest_pos">12</TD><TD PORT="digest_size">32</TD><TD>str(utf-8)</TD><TD PORT="digest_type">digest</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__rr_body_nsec3 {
+			label="DnsPacket::RrBodyNsec3";
+			graph[style=dotted];
+
+			rr_body_nsec3__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="class__pos">0</TD><TD PORT="class__size">2</TD><TD>u2be</TD><TD PORT="class__type">class_</TD></TR>
+				<TR><TD PORT="time_to_live_pos">2</TD><TD PORT="time_to_live_size">4</TD><TD>u4be</TD><TD PORT="time_to_live_type">time_to_live</TD></TR>
+				<TR><TD PORT="data_length_pos">6</TD><TD PORT="data_length_size">2</TD><TD>u2be</TD><TD PORT="data_length_type">data_length</TD></TR>
+				<TR><TD PORT="alg_pos">8</TD><TD PORT="alg_size">1</TD><TD>u1</TD><TD PORT="alg_type">alg</TD></TR>
+				<TR><TD PORT="flags_pos">9</TD><TD PORT="flags_size">1</TD><TD>u1</TD><TD PORT="flags_type">flags</TD></TR>
+				<TR><TD PORT="iterations_pos">10</TD><TD PORT="iterations_size">2</TD><TD>u2be</TD><TD PORT="iterations_type">iterations</TD></TR>
+				<TR><TD PORT="salt_length_pos">12</TD><TD PORT="salt_length_size">1</TD><TD>u1</TD><TD PORT="salt_length_type">salt_length</TD></TR>
+				<TR><TD PORT="hash_length_pos">13</TD><TD PORT="hash_length_size">1</TD><TD>u1</TD><TD PORT="hash_length_type">hash_length</TD></TR>
+				<TR><TD PORT="next_hash_pos">14</TD><TD PORT="next_hash_size">hash_length</TD><TD>str(utf-8)</TD><TD PORT="next_hash_type">next_hash</TD></TR>
+				<TR><TD PORT="type_map_pos">...</TD><TD PORT="type_map_size">...</TD><TD>Map</TD><TD PORT="type_map_type">type_map</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__rr_body_a {
+			label="DnsPacket::RrBodyA";
+			graph[style=dotted];
+
+			rr_body_a__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="class__pos">0</TD><TD PORT="class__size">2</TD><TD>u2be</TD><TD PORT="class__type">class_</TD></TR>
+				<TR><TD PORT="time_to_live_pos">2</TD><TD PORT="time_to_live_size">4</TD><TD>u4be</TD><TD PORT="time_to_live_type">time_to_live</TD></TR>
+				<TR><TD PORT="data_length_pos">6</TD><TD PORT="data_length_size">2</TD><TD>u2be</TD><TD PORT="data_length_type">data_length</TD></TR>
+				<TR><TD PORT="address_pos">8</TD><TD PORT="address_size">4</TD><TD>Ipv4Address</TD><TD PORT="address_type">address</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__word {
+			label="DnsPacket::Word";
+			graph[style=dotted];
+
+			word__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="length_pos">0</TD><TD PORT="length_size">1</TD><TD>u1</TD><TD PORT="length_type">length</TD></TR>
+				<TR><TD PORT="ref_pos">1</TD><TD PORT="ref_size">1</TD><TD>u1</TD><TD PORT="ref_type">ref</TD></TR>
+				<TR><TD PORT="letters_pos">2</TD><TD PORT="letters_size">length</TD><TD>str(utf-8)</TD><TD PORT="letters_type">letters</TD></TR>
+			</TABLE>>];
+			word__inst__is_ref [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">id</TD><TD BGCOLOR="#E0FFE0">value</TD></TR>
+				<TR><TD>is_ref</TD><TD>length == 192</TD></TR>
+			</TABLE>>];
+		}
+		subgraph cluster__rr_body_soa {
+			label="DnsPacket::RrBodySoa";
+			graph[style=dotted];
+
+			rr_body_soa__seq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+				<TR><TD BGCOLOR="#E0FFE0">pos</TD><TD BGCOLOR="#E0FFE0">size</TD><TD BGCOLOR="#E0FFE0">type</TD><TD BGCOLOR="#E0FFE0">id</TD></TR>
+				<TR><TD PORT="class__pos">0</TD><TD PORT="class__size">2</TD><TD>u2be</TD><TD PORT="class__type">class_</TD></TR>
+				<TR><TD PORT="time_to_live_pos">2</TD><TD PORT="time_to_live_size">4</TD><TD>u4be</TD><TD PORT="time_to_live_type">time_to_live</TD></TR>
+				<TR><TD PORT="data_length_pos">6</TD><TD PORT="data_length_size">2</TD><TD>u2be</TD><TD PORT="data_length_type">data_length</TD></TR>
+				<TR><TD PORT="primary_name_server_pos">8</TD><TD PORT="primary_name_server_size">...</TD><TD>Domain</TD><TD PORT="primary_name_server_type">primary_name_server</TD></TR>
+				<TR><TD PORT="reponsible_authority_pos">...</TD><TD PORT="reponsible_authority_size">...</TD><TD>Domain</TD><TD PORT="reponsible_authority_type">reponsible_authority</TD></TR>
+				<TR><TD PORT="serial_number_pos">...</TD><TD PORT="serial_number_size">4</TD><TD>u4be</TD><TD PORT="serial_number_type">serial_number</TD></TR>
+				<TR><TD PORT="refresh_interval_pos">...</TD><TD PORT="refresh_interval_size">4</TD><TD>u4be</TD><TD PORT="refresh_interval_type">refresh_interval</TD></TR>
+				<TR><TD PORT="retry_interval_pos">...</TD><TD PORT="retry_interval_size">4</TD><TD>u4be</TD><TD PORT="retry_interval_type">retry_interval</TD></TR>
+				<TR><TD PORT="expire_limit_pos">...</TD><TD PORT="expire_limit_size">4</TD><TD>u4be</TD><TD PORT="expire_limit_type">expire_limit</TD></TR>
+				<TR><TD PORT="minimum_ttl_pos">...</TD><TD PORT="minimum_ttl_size">4</TD><TD>u4be</TD><TD PORT="minimum_ttl_type">minimum_ttl</TD></TR>
+			</TABLE>>];
+		}
+	}
+	dns_packet__seq:queries_type -> query__seq [style=bold];
+	dns_packet__seq:qdcount_type -> dns_packet__seq:queries__repeat [color="#404040"];
+	dns_packet__seq:answers_type -> resource_record__seq [style=bold];
+	dns_packet__seq:ancount_type -> dns_packet__seq:answers__repeat [color="#404040"];
+	dns_packet__seq:authorities_type -> resource_record__seq [style=bold];
+	dns_packet__seq:nscount_type -> dns_packet__seq:authorities__repeat [color="#404040"];
+	dns_packet__seq:additionals_type -> resource_record__seq [style=bold];
+	dns_packet__seq:arcount_type -> dns_packet__seq:additionals__repeat [color="#404040"];
+	map___seq:length_type -> map___seq:map_bits_size [color="#404040"];
+	resource_record__seq:name_type -> domain__seq [style=bold];
+	resource_record__seq:body_type -> resource_record__seq_body_switch [style=bold];
+	resource_record__seq_body_switch:case0 -> rr_body_a__seq [style=bold];
+	resource_record__seq_body_switch:case1 -> rr_body_ds__seq [style=bold];
+	resource_record__seq_body_switch:case2 -> rr_body_ns__seq [style=bold];
+	resource_record__seq_body_switch:case3 -> rr_body_key__seq [style=bold];
+	resource_record__seq_body_switch:case4 -> rr_body_cname__seq [style=bold];
+	resource_record__seq_body_switch:case5 -> rr_body_opt__seq [style=bold];
+	resource_record__seq_body_switch:case6 -> rr_body_rrsig__seq [style=bold];
+	resource_record__seq_body_switch:case7 -> rr_body_nsec3__seq [style=bold];
+	resource_record__seq_body_switch:case8 -> rr_body_aaaa__seq [style=bold];
+	resource_record__seq_body_switch:case9 -> rr_body_soa__seq [style=bold];
+	resource_record__seq:type_type -> resource_record__seq:body_type [color="#404040"];
+	domain__seq:name_type -> word__seq [style=bold];
+	word__seq:length_type -> domain__seq:name__repeat [color="#404040"];
+	word__seq:length_type -> domain__seq:name__repeat [color="#404040"];
+	query__seq:name_type -> domain__seq [style=bold];
+	rr_body_rrsig__seq:sign_name_type -> domain__seq [style=bold];
+	rr_body_cname__seq:cname_type -> domain__seq [style=bold];
+	rr_body_aaaa__seq:address_type -> ipv6_address__seq [style=bold];
+	rr_body_ns__seq:name_server_type -> domain__seq [style=bold];
+	rr_body_nsec3__seq:hash_length_type -> rr_body_nsec3__seq:next_hash_size [color="#404040"];
+	rr_body_nsec3__seq:type_map_type -> map___seq [style=bold];
+	rr_body_a__seq:address_type -> ipv4_address__seq [style=bold];
+	word__seq:length_type -> word__seq:letters_size [color="#404040"];
+	word__seq:length_type -> word__inst__is_ref [color="#404040"];
+	rr_body_soa__seq:primary_name_server_type -> domain__seq [style=bold];
+	rr_body_soa__seq:reponsible_authority_type -> domain__seq [style=bold];
+}
