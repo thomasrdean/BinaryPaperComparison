@@ -153,4 +153,8 @@ struct DNS {
   ResourceRecord answer[numAnswer];
   ResourceRecord authority[numAuthority];
   ResourceRecord additional[numAdditional];
+  while(!FEof()) {
+    ubyte extraBytes;
+    //Exit(1);
+  }
 } file;
