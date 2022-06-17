@@ -18,8 +18,6 @@
 #include <antlr4-runtime.h>
 #include <tree/ParseTreeWalker.h>
 
-#include "antlr4cpp_generated_src/ARP/ARPLexer.h"
-#include "antlr4cpp_generated_src/ARP/ARPParser.h"
 #include "antlr4cpp_generated_src/DNS/DNSLexer.h"
 #include "antlr4cpp_generated_src/DNS/DNSParser.h"
 #include "ByteInputStream.h"
@@ -27,7 +25,6 @@
 //defines for the packet type code in an ETHERNET header
 #define ETHER_TYPE_IP (0x0800)
 #define ETHER_TYPE_IPv6 (0x86dd)
-#define ETHER_TYPE_ARP (0x0806)
 #define ETHER_TYPE_8021Q (0x8100)
 #define BIGENDIAN (0x0)
 #define LITTLEENDIAN (0x1)
@@ -155,7 +152,7 @@ int main(int argc, char * argv[]){
 	int ether_type = ((int)(pkt_ptr[12]) << 8) | (int)pkt_ptr[13];
 	int ether_offset = 0;
 
-	if (ether_type == ETHER_TYPE_IP || ether_type == ETHER_TYPE_IPv6 || ether_type == ETHER_TYPE_ARP)
+	if (ether_type == ETHER_TYPE_IP || ether_type == ETHER_TYPE_IPv6)
 	    ether_offset = 14;
 	else if (ether_type == ETHER_TYPE_8021Q)
 	    ether_offset = 18;
