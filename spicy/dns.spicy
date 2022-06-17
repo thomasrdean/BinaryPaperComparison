@@ -18,8 +18,9 @@ public type PDU = unit {
     authority:  ResourceRecord[self.numAuthority];
     additional: ResourceRecord[self.numAdditional];
     
+    extraBytes: bytes &eod;
     # on %done { print self; }
-};
+} &requires = |self.extraBytes| == 0;
 
 type Query = unit {
     name:  Domain;
