@@ -19,15 +19,12 @@ include_directories(${ANTLR4CPP_INCLUDE_DIRS})
 link_directories(${ANTLR4CPP_LIB_DIRS})
 ##################################################################
 
-antlr4cpp_process_grammar(ARP
-  ${PROJECT_SOURCE_DIR}/grammars/ARP.g4)
 antlr4cpp_process_grammar(DNS
   ${PROJECT_SOURCE_DIR}/grammars/DNS.g4)
 
 # add generated grammar to demo binary target
 add_executable(parser 
       ${moe_generated_files}
-      ${antlr4cpp_src_files_ARP}
       ${antlr4cpp_src_files_DNS}
       ${PROJECT_SOURCE_DIR}/pmain.cpp
       ${PROJECT_SOURCE_DIR}/ByteInputStream.cpp
