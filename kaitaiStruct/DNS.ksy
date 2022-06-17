@@ -31,6 +31,9 @@ seq:
     type: resource_record
     repeat: expr
     repeat-expr: arcount
+  - id: extra_bytes
+    type: fail
+    if: not _io.eof
 types:
   query:
     seq:
@@ -245,6 +248,12 @@ types:
     seq:
       - id: ip_v6
         size: 16
+  fail:
+    seq:
+      - id: eat_bytes
+        size-eos: true
+      - id: fail_to_eat_another
+        size: 1
 enums:
   rr_type:
     1: a
