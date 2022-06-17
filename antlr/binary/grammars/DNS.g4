@@ -14,6 +14,7 @@ dns:
   answer=sequenceOfResourceRecord[$numAnswer.val]
   authority=sequenceOfResourceRecord[$numAuthority.val]
   additional=sequenceOfResourceRecord[$numAdditional.val]
+  EOF
   {
 fprintf(stderr, "Successfully Parsed DNS Packet!!!\n");
   }
