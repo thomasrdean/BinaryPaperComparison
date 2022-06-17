@@ -11,3 +11,5 @@ Compile the binary template:
 `./compile.sh dns.bt`
 Run the parser:
 `python3 parsePcap.py <your_file>.pcap`
+
+I had to `sudo apt-get install libboost-all-dev`
