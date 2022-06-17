@@ -12,3 +12,6 @@ Unfortunately, we will have to duplicate this code for queryArray becuase I don'
 
 
 Tom says that in the paper we should mention that to read the byte values Antlr is currently converting them to strings and back. We could fix that, but probably not worth our time.
+
+
+I had to `sudo apt install uuid` and `sudo apt install uuid-dev`
