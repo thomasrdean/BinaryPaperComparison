@@ -167,4 +167,5 @@ dns = Struct(
     "answers" / resource_record[this.answer_count],
     "authorities" / resource_record[this.authority_count],
     "additionals" / resource_record[this.additional_count],
+    Terminated,
 )
