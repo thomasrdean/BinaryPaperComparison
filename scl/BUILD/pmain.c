@@ -2,9 +2,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <getopt.h>
 
 #include <pcap.h>
 #include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include <netinet/igmp.h>
 #include <netinet/udp.h>
 #include <netinet/if_ether.h>
@@ -12,342 +14,764 @@
 #include <signal.h>
 
 #include "globals.h"
-#include "pglobals.h"
+#include "packet.h"
+#include "sutilities.h"
 
-#include "IGMP_Generated.h"
-#include "UDP_Generated.h"
-#include "ARP_Generated.h"
+//#include "RTPS_Definitions.h"
+//#include "NTP_Definitions.h"
+#include "ARP_Definitions.h"
+#include "ARP_Serialize.h"
+#include "ARP_Print.h"
+#include "IGMP_Definitions.h"
+#include "IGMP_Serialize.h"
+//#include "DNS_Definitions.h"
+#include "UDP_Definitions.h"
+#include "UDP_Serialize.h"
+#include "DNS_Serialize.h"
+#include "UDP_Print.h"
 
 //defines for the packet type code in an ETHERNET header
 #define ETHER_TYPE_IP (0x0800)
+#define ETHER_TYPE_IPv6 (0x86dd)
 #define ETHER_TYPE_ARP (0x0806)
 #define ETHER_TYPE_8021Q (0x8100)
 #define BIGENDIAN (0x0)
 #define LITTLEENDIAN (0x1)
 
-FILE * traceFile = NULL;
 char * progname;
+
+//========================================
+// args variab les
+char * traceFileParserName = NULL;
+char * traceFileConsName = NULL;
+char * traceFileAppParserName = NULL;
+char * traceFileAppConsName = NULL;
+char * pcapFileName = NULL;
+char * RDFFileName = NULL;
+char * envDirectory = NULL;
+
+int record = 0;
+int debugLevel = 0;
+
+int numOptErrs = 0;
+//========================================
+
+// various files given by opts
+FILE * traceFileParser = NULL;
 FILE * traceFileCons = NULL;
-int learnmode;
-unsigned long long count = 1;
-unsigned long long failed = 0;
+FILE * traceFileAppParser = NULL;
+FILE * traceFileAppCons = NULL;
+FILE * rdfFile = NULL;
 
-bool start = true;
-pcap_t *handle;
+// num packets, and num failed pase
+unsigned long long pduCount = 1;
+unsigned long long pduSkipped = 0;
+unsigned long long pduFailed = 0;
+unsigned long long pduTotal = 0;
+
+pcap_t *pcapHandle = NULL;
+static char errbuf[PCAP_ERRBUF_SIZE];
 
 
-void findTotal(const char * filename, unsigned long long * total);
-void updateProgress(const unsigned long long * count);
+static void findTotal(const char * filename, unsigned long long * total);
+static void updateProgress(const unsigned long long * count);
+void constraintIntrHandler();
+void parserIntrHandler();
+static void mainIntrHandler(int signal);
+static void userReport(int signal);
+static void print_usage();
+static void handle_options(int argc, char * argv[]);
+static void dump_options();
+static void closeFiles();
 
-void constraintIntrHandler()
-{
-}
 
-void parserIntrHandler()
-{
-
-}
-
-void mainIntrHandler(int signal){
-       //constraintIntrHandler();
-       parserIntrHandler();
-       pcap_close(handle);
-
-       if (traceFile) fclose(traceFile);
-       if (traceFileCons) fclose(traceFileCons);
-       exit(0);
-}
-
-void userReport(int signal)
-{
-	if (traceFile) fflush(traceFile);
-	if (traceFileCons) fflush(traceFileCons);
-}
 
 int main(int argc, char * argv[]){
 
-	PDU * thePDU;
-	bool parsedPDU;
+    PDU * thePDU;
+    bool parsedPDU;
 
-	progname = argv[0];
-	printf("argc = %d\n", argc);
 
-	if (argc < 2 || argc > 5){
-		fprintf(stderr,"Usage %s pCapFile traceFile(optional) traceFile(optional) learnmode(optional)\n",progname);
-		exit(1);
+    progname = argv[0];
+    handle_options(argc, argv);
+    dump_options();
+
+    if(traceFileParserName){
+        traceFileParser = fopen(traceFileParserName, "w");
+	if (traceFileParser == NULL){
+	    fprintf(stderr, "%s: could not open parser trace file %s\n",progname,traceFileParserName);
+	    exit(1);
+	}
+    }
+
+    signal(SIGINT,mainIntrHandler);
+    signal(SIGUSR1,userReport);
+   
+    pcapHandle = pcap_open_offline(pcapFileName, errbuf);
+    if (pcapHandle == NULL) {
+	fprintf(stderr,"%s: could not open pcap file %s: %s\n", progname, pcapFileName, errbuf);
+	exit(1);
+    }
+
+    findTotal(pcapFileName, &pduTotal);
+
+    // should be a way to rewind. Aparently, can get the file * 
+    // and get the file position and seek to it.
+    // but for now, close and reopon.
+
+    pcap_close(pcapHandle);
+    pcapHandle = pcap_open_offline(pcapFileName, errbuf);
+    if (pcapHandle == NULL) {
+	fprintf(stderr,"%s: could not open pcap file %s: %s\n", progname, pcapFileName, errbuf);
+	exit(1);
+    }
+
+    printf("Total number of packets %lld\n", pduTotal);
+
+
+    struct pcap_pkthdr head; // The header that pcap gives us
+    const unsigned char *packet; // The packet data
+	
+    while ((packet = pcap_next(pcapHandle,&head)) != NULL) {
+	if ((pduCount % 100000) == 0) {
+	    updateProgress(&pduCount);
 	}
 
-	if(argc >= 3) {
-		if(strlen(argv[2]) > 200) { fprintf(stderr, "%s: Filename too long.\n", progname); exit(1); }
-		traceFile = fopen(argv[2], "w");
-		if (argc > 3)
-			traceFileCons = fopen(argv[3], "w");
+	// header contains information about the packet (e.g. timestamp)
+	unsigned char *pkt_ptr = (unsigned char *)packet; //cast a pointer to the packet data
 
-		if(traceFile) fprintf(traceFile,"PACKET #\tTYPE\n");
+	//parse the first (ethernet) header, grabbing the type field
+	int ether_type = ((int)(pkt_ptr[12]) << 8) | (int)pkt_ptr[13];
+	int ether_offset = 0;
 
-		if (argc > 4 && strncmp(argv[4], "learnmode", 9) == 0)
-		{
-			printf("learning Mode\n");
-			learnmode = 1; 
-		}
+	if (ether_type == ETHER_TYPE_IP || ether_type == ETHER_TYPE_IPv6 || ether_type == ETHER_TYPE_ARP)
+	    ether_offset = 14;
+	else if (ether_type == ETHER_TYPE_8021Q)
+	    ether_offset = 18;
+
+	if (ether_offset == 0) {
+	    if (traceFileParser) fprintf(traceFileParser,"Unknown ether type %d in packet %lld\n",ether_type,pduCount);
+	    // report and move to next packet
+	    pduCount++;
+	    continue;
 	}
-	if(strlen(argv[1]) > 200) { fprintf(stderr, "%s: Filename too long.\n", progname); exit(1); }
-	
-	signal(SIGINT,mainIntrHandler);
-	signal(SIGUSR1,userReport);
-    
 
-	char errbuf[PCAP_ERRBUF_SIZE]; //not sure what to do with this, oh well
-	handle = pcap_open_offline(argv[1], errbuf);   //call pcap library function
-	
-	if (handle == NULL) {
-		fprintf(stderr,"Couldn't open pcap file %s: %s\n", argv[1], errbuf);
-		exit(1);
-	}
-	
-	struct pcap_pkthdr head; // The header that pcap gives us
-	const unsigned char *packet; // The actual packet
-	//unsigned long long count = 0;
-
-	
-	while ((packet = pcap_next(handle,&head)) != NULL) {
-		if ((count % 100000) == 0) {
-			updateProgress(&count);
-		}
-
-		// header contains information about the packet (e.g. timestamp)
-		unsigned char *pkt_ptr = (unsigned char *)packet; //cast a pointer to the packet data
-
-		//parse the first (ethernet) header, grabbing the type field
-		int ether_type = ((int)(pkt_ptr[12]) << 8) | (int)pkt_ptr[13];
-		int ether_offset = 0;
+	//parse the IP header
+	pkt_ptr += ether_offset;  //skip past the Ethernet header
 		
-		/*fprintf(stdout, "example %04X\n", (pkt_ptr[13]));
-		fprintf(stdout, "ether_type %04X\n", ether_type);*/
 
-		if (ether_type == ETHER_TYPE_IP || ether_type == ETHER_TYPE_ARP) //most common
-			ether_offset = 14;
-		else if (ether_type == ETHER_TYPE_8021Q) //my traces have this
-			ether_offset = 18;
-		else
-			ether_offset = 1;
-		//	fprintf(stderr, "Unknown ethernet type, %04X, skipping...\n", ether_type);
-
-		if (ether_offset == 0) { count++; continue; }
-		
-		//parse the IP header
-		pkt_ptr += ether_offset;  //skip past the Ethernet II header
+	if(ether_type == ETHER_TYPE_ARP) {
+	    // ****** ARP **********
+	    if (traceFileParser) fprintf(traceFileParser,"%7llu\tARP",pduCount);
+	    //if (traceFileParser) fprintf(traceFileParser,"\n");
 
 
-		if(ether_type == ETHER_TYPE_ARP) {
-			//struct ether_arp *arp_hdr = (struct ether_arp *)pkt_ptr; //point to an ARP header structure
-			if (traceFile) fprintf(traceFile,"%llu\t\t\tARP",count);
-			int data_len = 28;
+	    int data_len = 28;
+	    thePDU = (PDU*)malloc(sizeof(PDU));
+	    if (thePDU == NULL){
+		fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
+		exit(1);
+	    }
+	    thePDU->len = data_len;
+	    thePDU->watermark= data_len;
+	    thePDU->curPos = 0;
+	    thePDU->data = pkt_ptr;
 
-			thePDU = (PDU*)malloc(sizeof(PDU));
-			if (thePDU == NULL){
-				fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
-				exit(1);
-			}
-			thePDU->len = data_len;
-			thePDU->watermark= data_len;
-			thePDU->curPos = 0;
-			thePDU->data = pkt_ptr;
+	    thePDU ->curPos = 0;
+	    thePDU ->curBitPos = 0;
+	    thePDU ->remaining = thePDU ->len;
+	    thePDU->header = NULL;
 
-			thePDU ->curPos = 0;
-			thePDU ->curBitPos = 0;
-			thePDU ->remaining = thePDU ->len;
-			thePDU->header = NULL;
-			uint8_t endianness = BIGENDIAN;
-			PDU_ARP pdu_arp;
+	    uint8_t endianness = BIGENDIAN;
+	    PDU_ARP pdu_arp;
 
-			parsedPDU = parseARP(&pdu_arp, thePDU, argv[1], endianness);
-			if (parsedPDU == true){
-				//fprintf(stderr,"Parsed packet %d\n",count);
-				if (traceFile) fprintf(traceFile,"\n");
-			} else { 
-				//fprintf(stderr, "Couldn't Parse packet # %d\n", count+1);
-				if (traceFile) fprintf(traceFile,"\t\t\tFAILED\n");
-				++failed;
-			}
-			freePDU_ARP(&pdu_arp);
-			free(thePDU);
-			thePDU = NULL;
-		} else if (ether_type == ETHER_TYPE_IP) {
-			struct ip *ip_hdr = (struct ip *)pkt_ptr; //point to an IP header structure
+	    parsedPDU = parsePDU_ARP(&pdu_arp, thePDU, argv[1], endianness);
+	    if (parsedPDU == true){
+
+		SerializeBuffer * buff;
+		buff = serializePDU_ARP (NULL, &pdu_arp, argv[1], endianness);
+		unsigned long len;
+		unsigned char * sdata = combineBuffers(buff,&len);
+
+		if (len != thePDU -> len){
+		    printf("serialized size doesn't agree: %lu, %lu\n", thePDU -> len, len);
+		    printPDU_ARP(stdout,&pdu_arp,0,-1);
+		}
+
+		if (memcmp(sdata,thePDU -> data,len) != 0){
+		    printf("serialized data is different\n");
+		    printf("original data  =");
+		    for (int i = 0; i < data_len; i++){
+			printf("%02x",pkt_ptr[i]);
+		    }
+		    printf("\n");
+		    printf("\n");
+		    printf("serialized data=");
+		    for (int i = 0; i < len; i++){
+			printf("%02x",sdata[i]);
+		    }
+		    printf("\n");
+		}
+
+		freeBuffers(buff);
+
+		if (traceFileParser) fprintf(traceFileParser,"\n");
+	    } else { 
+		//fprintf(stderr, "Couldn't Parse packet # %d\n", count+1);
+		if (traceFileParser) fprintf(traceFileParser,"\tFAILED\n");
+		++pduFailed;
+	    }
+	    freePDU_ARP(&pdu_arp);
+	    free(thePDU);
+	    thePDU = NULL;
+
+	} else if (ether_type == ETHER_TYPE_IP) {
+	    struct ip *ip_hdr = (struct ip *)pkt_ptr; //point to an IP header structure
 			
-			// ntohs
-			//inet_ntoa(ip->ip_src)
-			//If the packet is an IGMP packet 
-			if (ip_hdr -> ip_p == 0x02) {
-				if (traceFile) fprintf(traceFile,"%llu\t\t\tIGMP",count);
-				//fprintf(stderr,"packet %d: IGMP %d\n",count, ip_hdr->ip_hl);
-				pkt_ptr += (ip_hdr->ip_hl * 4); // pass the ip header to the IGMP packet.
-				int data_len = ntohs(ip_hdr->ip_len)-ip_hdr->ip_hl*4;
+	    if (ip_hdr -> ip_p == 0x02) {
 
-				thePDU = (PDU*)malloc(sizeof(PDU));
-				if (thePDU == NULL){
-					fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
-					exit(1);
-				}
-				thePDU->len = data_len;
-				thePDU->watermark= data_len;
-				thePDU->curPos = 0;
-				thePDU->data = pkt_ptr;
+		// **********  IGMP ****************
 
-				struct HeaderInfo *header = (struct HeaderInfo*)malloc(sizeof(struct HeaderInfo));
-				if(header == NULL) {
-					fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
-					exit(1);
-				}
+		if (traceFileParser) fprintf(traceFileParser, "%7llu\tIGMP",pduCount);
+		//if (traceFileParser) fprintf(traceFileParser,"\n");
 
+		//fprintf(stderr,"packet %d: IGMP %d\n",count, ip_hdr->ip_hl);
+		pkt_ptr += (ip_hdr->ip_hl * 4); // pass the ip header to the IGMP packet.
+		int data_len = ntohs(ip_hdr->ip_len)-ip_hdr->ip_hl*4;
 
-				header->srcIP = ntohs(ip_hdr->ip_src.s_addr) << 16 | ntohs(ip_hdr->ip_src.s_addr >> 16);
-				header->dstIP = ntohs(ip_hdr->ip_dst.s_addr) << 16 | ntohs(ip_hdr->ip_dst.s_addr >> 16);
-				header->srcPort = 0;
-				header->dstPort = 0;
-				header->time = head.ts.tv_sec;
-				header->pktCount = count;
-				
-				thePDU ->curPos = 0;
-				thePDU ->curBitPos = 0;
-				thePDU ->remaining = thePDU ->len;
-				thePDU->header = header;
-				uint8_t endianness = BIGENDIAN;
-				PDU_IGMP pdu_igmp;
-
-				parsedPDU = parseIGMP(&pdu_igmp, thePDU, argv[1], endianness);
-				if (parsedPDU == true){
-					//fprintf(stderr,"Parsed packet %d\n",count);
-					if (traceFile) fprintf(traceFile,"\n");
-				} else { 
-					//fprintf(stderr, "Couldn't Parse packet # %d\n", count+1);
-					if (traceFile) fprintf(traceFile,"\t\t\tFAILED\n");
-					++failed;
-				}
-				freePDU_IGMP(&pdu_igmp);
-				free(thePDU);
-				thePDU = NULL;
-				free(header);
-				header = NULL;	
-			} else if(ip_hdr->ip_p == 0x11) { // A UDP Packet
-				if (traceFile) fprintf(traceFile,"%llu\t\t\tUDP",count);
-				pkt_ptr += (ip_hdr->ip_hl * 4); // pass the ip header to the UDP packet.
-				struct udphdr * up_hdr = (struct udphdr *) pkt_ptr;
-	            pkt_ptr += (sizeof(struct udphdr));
-				int data_len = ntohs(ip_hdr->ip_len)-ip_hdr->ip_hl*4 - sizeof(struct udphdr);
-
-				thePDU = (PDU*)malloc(sizeof(PDU));
-				if (thePDU == NULL){
-					fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
-					exit(1);
-				}
-				thePDU->len = data_len;
-				thePDU->watermark= data_len;
-				thePDU->curPos = 0;
-				thePDU->data = pkt_ptr;
-
-				struct HeaderInfo *header = (struct HeaderInfo*)malloc(sizeof(struct HeaderInfo));
-				if(header == NULL) {
-					fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
-					exit(1);
-				}
-
-				header->srcIP = ntohs(ip_hdr->ip_src.s_addr) << 16 | ntohs(ip_hdr->ip_src.s_addr >> 16);
-				header->dstIP = ntohs(ip_hdr->ip_dst.s_addr) << 16 | ntohs(ip_hdr->ip_dst.s_addr >> 16);
-				header->srcPort = ntohs(up_hdr->uh_sport);
-				header->dstPort = ntohs(up_hdr->uh_dport);
-				header->time = head.ts.tv_sec;
-				header->pktCount = count;
-
-				if(traceFile) {
-					uint32_t val=thePDU->data[thePDU->curPos] << 24 | 
-						thePDU->data[thePDU->curPos+1] << 16 | 
-						thePDU->data[thePDU->curPos+2] << 8 | 
-						thePDU->data[thePDU->curPos+3];
-					if(val==1381257299)
-						fprintf(traceFile, " RTPS");
-					if(val==1381257304)
-						fprintf(traceFile, " RTPX");
-					if((thePDU->data[thePDU->curPos] & 56) == 32)
-						fprintf(traceFile, " NTP");
-
-				}
-				//parsedPDU = parseRTPSPacket(thePDU, header, argv[1]);
-	/*			if (parseRTPSPacket(thePDU, header, argv[1])){
-					//fprintf(stderr,"Parsed packet %d\n",count);
-					if (traceFile) fprintf(traceFile,"\n");
-				} else if (parseNTPPacket(thePDU, header, argv[1])) {
-					if (traceFile) fprintf(traceFile," NTP\n");
-				} else { 
-					//fprintf(stderr, "Couldn't Parse packet # %d\n", count+1);
-					if (traceFile) fprintf(traceFile,"\t\t\tFAILED\n");
-					++failed;
-				}*/
-				thePDU ->curPos = 0;
-				thePDU ->curBitPos = 0;
-				thePDU ->remaining = thePDU ->len;
-				thePDU->header = header;
-				uint8_t endianness = BIGENDIAN;
-				PDU_UDP pdu_udp;
-
-				if(parseUDP(&pdu_udp, thePDU, progname, endianness)) {
-					if (traceFile) fprintf(traceFile,"\n");
-				} else { 
-					//fprintf(stderr, "Couldn't Parse packet # %d\n", count+1);
-					if (traceFile) fprintf(traceFile,"\t\t\tFAILED\n");
-					++failed;
-				}
-
-				freePDU_UDP(&pdu_udp);
-				free(thePDU);
-				thePDU = NULL;
-				free(header);
-				header = NULL;			
-			} else{
-				if (traceFile) fprintf(traceFile,"%llu\t\t\tOTHER\t\t\tFAILED\n", count);
-				++failed;
-			}
+		thePDU = (PDU*)malloc(sizeof(PDU));
+		if (thePDU == NULL){
+		    fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
+		    exit(1);
 		}
-		count++;
-		//printf("COUNT : %lu\n", count);
-		/*if(count > 20)
-			break; //TODO: Temporary only read first packet*/
-	} //end internal loop for reading packets (all in one file)
+		thePDU->len = data_len;
+		thePDU->watermark= data_len;
+		thePDU->curPos = 0;
+		thePDU->data = pkt_ptr;
+
+		struct HeaderInfo *header = (struct HeaderInfo*)malloc(sizeof(struct HeaderInfo));
+		if(header == NULL) {
+		    fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
+		    exit(1);
+		}
+
+		header->srcIP.v4 = ntohl(ip_hdr->ip_src.s_addr);
+		header->dstIP.v4 = ntohl(ip_hdr->ip_dst.s_addr);
+		header->srcPort = 0;
+		header->dstPort = 0;
+		header->time = head.ts.tv_sec;
+		header->pktCount = pduCount;
+				
+		thePDU ->curPos = 0;
+		thePDU ->curBitPos = 0;
+		thePDU ->remaining = thePDU ->len;
+		thePDU->header = header;
+		uint8_t endianness = BIGENDIAN;
+		PDU_IGMP pdu_igmp;
+
+		parsedPDU = parsePDU_IGMP(&pdu_igmp, thePDU, argv[1], endianness);
+		if (parsedPDU == true){
+		    if (traceFileParser) fprintf(traceFileParser,"\tSUCCESS");
+
+		    SerializeBuffer * buff;
+		    buff = serializePDU_IGMP (NULL, &pdu_igmp, argv[1], endianness);
+		    unsigned long len;
+		    unsigned char * sdata = combineBuffers(buff,&len);
+
+		    if (len != thePDU -> len){
+			printf("serialized size doesn't agree: %lu, %lu\n", thePDU -> len, len);
+		    }
+
+		    if (memcmp(sdata,thePDU -> data,len) != 0){
+			printf("serialized data is different\n");
+			printf("serialized data=");
+			for (int i = 0; i < len; i++){
+			    printf("%02x",sdata[i]);
+			}
+			printf("\n");
+		    }
+
+		    freeBuffers(buff);
+		    if (traceFileParser) fprintf(traceFileParser,"\n");
+		} else { 
+		    //fprintf(stderr, "Couldn't Parse packet # %d\n", count+1);
+		    if (traceFileParser) fprintf(traceFileParser,"\t\t\tFAILED\n");
+		    ++pduFailed;
+		}
+		freePDU_IGMP(&pdu_igmp);
+		free(thePDU);
+		thePDU = NULL;
+		free(header);
+		header = NULL;	
+
+	    } else if(ip_hdr->ip_p == 0x11) { 
+
+		// *********** UDP ************************
+
+		if (traceFileParser) fprintf(traceFileParser,"%7llu\tUDP",pduCount);
+		//if (traceFileParser) fprintf(traceFileParser,"\n");
+
+		pkt_ptr += (ip_hdr->ip_hl * 4); // pass the ip header to the UDP packet.
+		struct udphdr * up_hdr = (struct udphdr *) pkt_ptr;
+		pkt_ptr += (sizeof(struct udphdr));
+		int data_len = ntohs(up_hdr->uh_ulen) - sizeof(struct udphdr);
+        if (data_len != ntohs(ip_hdr->ip_len)-ip_hdr->ip_hl*4 - sizeof(struct udphdr)) {
+		    fprintf(stderr,"%s: malformed packet (data_len discrepancy) error file: %s line: %d\n",progname, __FILE__ , __LINE__);
+        }
+
+
+		thePDU = (PDU*)malloc(sizeof(PDU));
+		if (thePDU == NULL){
+		    fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
+		    exit(1);
+		}
+		thePDU->len = data_len;
+		thePDU->watermark= data_len;
+		thePDU->curPos = 0;
+		thePDU->data = pkt_ptr;
+
+		struct HeaderInfo *header = (struct HeaderInfo*)malloc(sizeof(struct HeaderInfo));
+		if(header == NULL) {
+		    fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
+		    exit(1);
+		}
+
+        header->ip_v = 4;
+		header->srcIP.v4 = ntohl(ip_hdr->ip_src.s_addr);
+		header->dstIP.v4 = ntohl(ip_hdr->ip_dst.s_addr);
+		header->srcPort = ntohs(up_hdr->uh_sport);
+		header->dstPort = ntohs(up_hdr->uh_dport);
+		header->time = head.ts.tv_sec;
+		header->pktCount = pduCount;
+
+		//if (traceFileParser) fprintf(traceFileParser,"\n");
+
+		thePDU ->curPos = 0;
+		thePDU ->curBitPos = 0;
+		thePDU ->remaining = thePDU ->len;
+		thePDU->header = header;
+		uint8_t endianness = BIGENDIAN;
+
+		PDU_UDP pdu_udp;
+		if(parsePDU_UDP(&pdu_udp, thePDU, progname, endianness)) {
+
+		    switch (pdu_udp.type){
+		        case  PDU_DNS_VAL:
+			    if (traceFileParser) fprintf(traceFileParser,"\tDNS");
+			    break;
+		        case  PDU_NTP_VAL:
+			    if (traceFileParser) fprintf(traceFileParser,"\tNTP");
+			    break;
+		        case  PDU_RTPS_VAL:
+			    if (traceFileParser) fprintf(traceFileParser,"\tRTPS");
+			    break;
+			default:
+			    if (traceFileParser) fprintf(traceFileParser,"Uknown UDP type tag value (%d)\n",pdu_udp.type);
+		    }
+
+		    if (traceFileParser) fprintf(traceFileParser,"\tSUCCESS");
+
+
+		    SerializeBuffer * buff;
+		    buff = serializePDU_UDP (NULL, &pdu_udp, argv[1], endianness);
+		    unsigned long len;
+		    unsigned char * sdata = combineBuffers(buff,&len);
+
+		    if (len != thePDU -> len){
+		        if (traceFileParser){
+			    fprintf(traceFileParser," serialized size doesn't agree: %lu, %lu\n", thePDU -> len, len);
+			    printPDU_UDP(stdout,&pdu_udp,0,-1);
+			} else {
+			    printf("serialized size doesn't agree: %lu, %lu\n", thePDU -> len, len);
+			}
+		    }
+
+		    if (memcmp(sdata,thePDU -> data,len) != 0){
+			printf("serialized data is different\n");
+			printf("original data=");
+			for (int i = 0; i < data_len; i++){
+			    printf("%02x",pkt_ptr[i]);
+			}
+			printf("\n\n");
+			printf("serialized data=");
+			for (int i = 0; i < len; i++){
+			    printf("%02x",sdata[i]);
+			}
+			printf("\n");
+		    }
+
+		    freeBuffers(buff);
+		    if (traceFileParser) fprintf(traceFileParser,"\n");
+		} else { 
+		    //fprintf(stderr, "Couldn't Parse packet # %d\n", count+1);
+		    if (traceFileParser) fprintf(traceFileParser,"\tFAILED\n");
+		    ++pduFailed;
+		}
+
+		freePDU_UDP(&pdu_udp);
+
+		free(thePDU);
+		thePDU = NULL;
+		free(header);
+		header = NULL;			
+	    } else {
+	        // ******** OTHER (e.g. TCP) **********************
+		if (traceFileParser) fprintf(traceFileParser,"%llu\t\t\tOTHER\n", pduCount);
+            ++pduSkipped;
+	    }
+	} else if (ether_type == ETHER_TYPE_IPv6) {
+	    struct ip6_hdr *ip_hdr = (struct ip6_hdr *)pkt_ptr; //point to an IP header structure
+			
+	    if(ip_hdr->ip6_ctlun.ip6_un1.ip6_un1_nxt == 0x11) { 
+
+		// *********** UDP ************************
+
+		if (traceFileParser) fprintf(traceFileParser,"%7llu\tUDP",pduCount);
+		//if (traceFileParser) fprintf(traceFileParser,"\n");
+
+		pkt_ptr += 40; // pass the ip header to the UDP packet.
+		struct udphdr * up_hdr = (struct udphdr *) pkt_ptr;
+		pkt_ptr += (sizeof(struct udphdr));
+		int data_len = ntohs(up_hdr->uh_ulen) - sizeof(struct udphdr);
+        if (ip_hdr->ip6_ctlun.ip6_un1.ip6_un1_plen != up_hdr->uh_ulen) {
+		    fprintf(stderr,"%s: malformed packet (data_len discrepancy) error file: %s line: %d\n",progname, __FILE__ , __LINE__);
+        }
+
+
+		thePDU = (PDU*)malloc(sizeof(PDU));
+		if (thePDU == NULL){
+		    fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
+		    exit(1);
+		}
+		thePDU->len = data_len;
+		thePDU->watermark= data_len;
+		thePDU->curPos = 0;
+		thePDU->data = pkt_ptr;
+
+		struct HeaderInfo *header = (struct HeaderInfo*)malloc(sizeof(struct HeaderInfo));
+		if(header == NULL) {
+		    fprintf(stderr,"%s: internal malloc error file: %s line: %d\n",progname, __FILE__ , __LINE__);
+		    exit(1);
+		}
+
+        header->ip_v = 6;
+        memcpy(header->srcIP.v6, &ip_hdr->ip6_src, sizeof(struct in6_addr));
+        memcpy(header->dstIP.v6, &ip_hdr->ip6_dst, sizeof(struct in6_addr));
+		header->srcPort = ntohs(up_hdr->uh_sport);
+		header->dstPort = ntohs(up_hdr->uh_dport);
+		header->time = head.ts.tv_sec;
+		header->pktCount = pduCount;
+
+		//if (traceFileParser) fprintf(traceFileParser,"\n");
+
+		thePDU ->curPos = 0;
+		thePDU ->curBitPos = 0;
+		thePDU ->remaining = thePDU ->len;
+		thePDU->header = header;
+		uint8_t endianness = BIGENDIAN;
+
+		PDU_UDP pdu_udp;
+		if(parsePDU_UDP(&pdu_udp, thePDU, progname, endianness)) {
+
+		    switch (pdu_udp.type){
+		        case  PDU_DNS_VAL:
+			    if (traceFileParser) fprintf(traceFileParser,"\tDNS");
+			    break;
+		        case  PDU_NTP_VAL:
+			    if (traceFileParser) fprintf(traceFileParser,"\tNTP");
+			    break;
+		        case  PDU_RTPS_VAL:
+			    if (traceFileParser) fprintf(traceFileParser,"\tRTPS");
+			    break;
+			default:
+			    if (traceFileParser) fprintf(traceFileParser,"Uknown UDP type tag value (%d)\n",pdu_udp.type);
+		    }
+
+		    if (traceFileParser) fprintf(traceFileParser,"\tSUCCESS");
+
+
+		    SerializeBuffer * buff;
+		    buff = serializePDU_UDP (NULL, &pdu_udp, argv[1], endianness);
+		    unsigned long len;
+		    unsigned char * sdata = combineBuffers(buff,&len);
+
+		    if (len != thePDU -> len){
+		        if (traceFileParser){
+			    fprintf(traceFileParser," serialized size doesn't agree: %lu, %lu\n", thePDU -> len, len);
+			    printPDU_UDP(stdout,&pdu_udp,0,-1);
+			} else {
+			    printf("serialized size doesn't agree: %lu, %lu\n", thePDU -> len, len);
+			}
+		    }
+
+		    if (memcmp(sdata,thePDU -> data,len) != 0){
+			printf("serialized data is different\n");
+			printf("original data=");
+			for (int i = 0; i < data_len; i++){
+			    printf("%02x",pkt_ptr[i]);
+			}
+			printf("\n\n");
+			printf("serialized data=");
+			for (int i = 0; i < len; i++){
+			    printf("%02x",sdata[i]);
+			}
+			printf("\n");
+		    }
+
+		    freeBuffers(buff);
+		    if (traceFileParser) fprintf(traceFileParser,"\n");
+		} else { 
+		    //fprintf(stderr, "Couldn't Parse packet # %d\n", count+1);
+		    if (traceFileParser) fprintf(traceFileParser,"\tFAILED\n");
+		    ++pduFailed;
+		}
+
+		freePDU_UDP(&pdu_udp);
+
+		free(thePDU);
+		thePDU = NULL;
+		free(header);
+		header = NULL;			
+	    } else {
+	        // ******** OTHER (e.g. TCP) **********************
+		if (traceFileParser) fprintf(traceFileParser,"%llu\t\t\tOTHER\n", pduCount);
+            ++pduSkipped;
+	    }
+	}
+	pduCount++;
+	//printf("COUNT : %lu\n", count);
+    } //end internal loop for reading packets (all in one file)
 	
-	//fclose(outFactsFile);
-	pcap_close(handle);  //close the pcap file 
+    pcap_close(pcapHandle);  //close the pcap file 
 
 
-	count -= 1;
-	fprintf(stdout, "\nPackets Parsed: %llu\nPackets Failed: %llu\nTotal Packets: %llu\nFailure rate: %0.2f%%\n", count-failed, failed, count, ((float)failed/count) * 100);
-	if(traceFile) fprintf(traceFile, "\nPackets Parsed: %llu\nPackets Failed: %llu\nTotal Packets: %llu\nFailure rate: %0.2f%%\n", count-failed, failed, count, ((float)failed/count) * 100);
+    pduCount -= 1;
 
-	//PrintEvaluateStats();
+    fprintf(stdout, "\nPackets Parsed: %llu\nPackets Failed: %llu\nTotal Packets: %llu\nFailure rate: %0.2f%%\n", pduCount-pduSkipped-pduFailed, pduFailed, pduCount, ((float)pduFailed/pduCount) * 100);
+    if(traceFileParser) fprintf(traceFileParser, "\nPackets Parsed: %llu\nPackets Failed: %llu\nTotal Packets: %llu\nFailure rate: %0.2f%%\n", pduCount-pduSkipped-pduFailed, pduFailed, pduCount, ((float)pduFailed/pduCount) * 100);
 
-	if(traceFile) {
-		fclose(traceFile);
-	}
-	if(traceFileCons) {
-		fclose(traceFileCons);
-	}
-	return 0;
+    closeFiles();
+    return 0;
 }
 
-void findTotal(const char * filename, unsigned long long * total) {
-	*total = 0;
-	char buff[PCAP_ERRBUF_SIZE]; //not sure what to do with this, oh well
-	handle = pcap_open_offline(filename, buff);   //call pcap library function
-	struct pcap_pkthdr head;
-	
-	while(pcap_next(handle,&head) != NULL) {
-		++(*total);
-	}
+//============================================
+// command line options
+//============================================
 
-	pcap_close(handle);
+static void print_usage() {
+        fprintf(stderr, "Usage %s [args] pcapfile\n",progname);
+        fprintf(stderr, "-p | --pcap <pCapFile>\n");
+        fprintf(stderr, "-t | --traceFile <parserTraceFile>\n");
+        fprintf(stderr, "-c | --traceFileCons <constraintTraceFile>\n");
+        fprintf(stderr, "-a | --appTraceFile <AppLevelParserTraceFile>\n");
+        fprintf(stderr, "-g | --appTtraceFileCons <AppLevelConstraintTraceFile>\n");
+        fprintf(stderr, "-e | --recordEnvironment\n");
+        fprintf(stderr, "-E | --envDir <dirname>\n");
+        fprintf(stderr, "-d | --debugLevel 1..3 \n");
+        fprintf(stderr, "-h | --help\n");
+        fprintf(stderr, "-r | --RDF <RDFFile>\n");
+        exit(1);
 }
 
-void updateProgress(const unsigned long long * count) {
+static struct option long_options[] = {
+    {"recordEnvironment", no_argument, 0, 'e'},
+    {"envDir", no_argument, 0, 'E'},
+    {"traceFile", required_argument, 0, 't'},
+    {"traceFileCons", required_argument, 0, 'c'},
+    {"appTraceFile", required_argument, 0, 'a'},
+    {"appTraceFileCons", required_argument, 0, 'g'},
+    {"debugLevel", required_argument, 0, 'd'},
+    {"help", no_argument, 0, 'h'},
+    {0, 0, 0, 0}
+};
+
+static void handle_options(int argc, char * argv[]){
+
+    int option, prev_ind;
+
+    while (prev_ind = optind,(option = getopt_long(argc, argv, ":ehr:t:c:p:d:a:g:E:", long_options, NULL)) != -1){
+        if (optarg){
+	    if (optind == prev_ind + 2 && *optarg == '-'){
+		optopt = option;
+		option = ':';
+		optind--;
+	    }
+	}
+	switch(option) {
+	    case 'e' :
+		record = 1;
+		break;
+	    case 'h' :
+		print_usage();
+		exit(0);
+		break;
+	    case 'r' :
+		if(strlen(optarg) > 200) { fprintf(stderr, "%s: Filename too long.\n", progname); exit(1); }
+		RDFFileName = optarg;
+		break;
+	    case 'E' :
+		if(strlen(optarg) > 200) { fprintf(stderr, "%s: Filename too long.\n", progname); exit(1); }
+		envDirectory = optarg;
+		break;
+	    case 't' :
+		if(strlen(optarg) > 200) { fprintf(stderr, "%s: Filename too long.\n", progname); exit(1); }
+		traceFileParserName = optarg;
+		break;
+	    case 'c' :
+		if(strlen(optarg) > 200) { fprintf(stderr, "%s: Filename too long.\n", progname); exit(1); }
+		traceFileConsName = optarg;
+		break;
+	    case 'd' :{
+	        int d = atoi(optarg);
+		if((d < 1) ||(d > 3)) {fprintf(stderr, "debug level is 1 to 3. Value entered: %s\n", optarg); exit(1); }
+		debugLevel = d;
+		}
+		break;
+	    case 'a' :
+		if(strlen(optarg) > 200) { fprintf(stderr, "%s: Filename too long.\n", progname); exit(1); }
+	        traceFileAppParserName = optarg;
+		break;
+	    case 'g' :
+		if(strlen(optarg) > 200) { fprintf(stderr, "%s: Filename too long.\n", progname); exit(1); }
+		traceFileAppConsName = optarg;
+		break;
+	    case '?' :
+	        fprintf(stderr,"unregonized option argument %c\n", optopt);
+		numOptErrs++;
+		break;
+	    case ':' :
+	        fprintf(stderr,"-%c without value\n", optopt);
+		numOptErrs++;
+		break;
+	    default :
+		fprintf(stderr, "getopt default case\n");
+		break;
+
+        }
+    }
+
+    //printf("after optarg, argc = %d\n", argc);
+    //printf("after optarg, optind = %d\n", optind);
+    //printf("after optarg, numOptErrs = %d\n", numOptErrs);
+
+    //for (int i = 0; i < argc; i++){
+       //printf("%i: %s\n", i, argv[i]);
+    //}
+
+    if (argc != optind+1){
+       fprintf(stderr,"missing name of pcap file\n");
+       numOptErrs++;
+    }
+
+    if (numOptErrs > 0){
+	print_usage();
+    }
+
+    pcapFileName = argv[optind];
+
+}
+
+static void dump_options(){
+
+    if(pcapFileName == NULL){
+       fprintf(stderr,"No pcap file name\n");
+    } else{
+       fprintf(stderr,"pcapFileName = %s\n",pcapFileName);
+    }
+
+    if(traceFileParserName == NULL){
+       fprintf(stderr,"No parser trace file name\n");
+    } else{
+       fprintf(stderr,"traceFileParserName = %s\n",traceFileParserName);
+    }
+
+    if(traceFileConsName == NULL){
+       fprintf(stderr,"No constraint trace file name\n");
+    } else{
+       fprintf(stderr,"traceFileConsName = %s\n",traceFileConsName);
+    }
+
+    if(traceFileAppParserName == NULL){
+       fprintf(stderr,"No app parser trace file name\n");
+    } else{
+       fprintf(stderr,"traceFileAppParserName = %s\n",traceFileAppParserName);
+    }
+
+    if(traceFileAppConsName == NULL){
+       fprintf(stderr,"No app constraint trace file name\n");
+    } else{
+       fprintf(stderr,"traceFileAppConsName = %s\n",traceFileAppConsName);
+    }
+
+    if(RDFFileName == NULL){
+       fprintf(stderr,"No RDF file name\n");
+    } else{
+       fprintf(stderr,"RDFFileName = %s\n",RDFFileName);
+    }
+
+    if(envDirectory == NULL){
+       fprintf(stderr,"No environment directory name\n");
+    } else{
+       fprintf(stderr,"envDirectory = %s\n",envDirectory);
+    }
+
+   fprintf(stderr,"record environment = %d\n",record);
+   fprintf(stderr,"deubg level = %d\n",debugLevel);
+    
+}
+
+//============================================
+// handle Ctrl - C sanely
+//============================================
+
+void constraintIntrHandler() {
+}
+
+void parserIntrHandler() {
+}
+
+static void mainIntrHandler(int signal){
+    // pass int on to others if needed.
+    constraintIntrHandler();
+    parserIntrHandler();
+
+    // close pcapfile
+    if (pcapHandle) pcap_close(pcapHandle);
+
+    // close other files
+    closeFiles();
+
+    exit(0);
+}
+
+void closeFiles(){
+    if(traceFileParser) fclose(traceFileParser);
+    if(traceFileCons) fclose(traceFileCons);
+    if(traceFileAppParser) fclose(traceFileAppParser);
+    if(traceFileAppCons) fclose(traceFileAppCons);
+    if(rdfFile) fclose(rdfFile);
+}
+
+
+//============================================
+// User report triggered by SIGUSR1
+//============================================
+static void userReport(int signal)
+{
+	if (traceFileParser) fflush(traceFileParser);
+	if (traceFileCons) fflush(traceFileCons);
+}
+
+
+static void findTotal(const char * filename, unsigned long long * total) {
+    *total = 0;
+    struct pcap_pkthdr head;
+    while(pcap_next(pcapHandle,&head) != NULL) {
+	++(*total);
+    }
+}
+
+static void updateProgress(const unsigned long long * count) {
 	//unsigned int complete = (int)(((long double)*count / *total) * 80);
 	/*//printf("complete : %d \n", complete);
 	static unsigned int previous = 0;
@@ -375,3 +799,4 @@ void updateProgress(const unsigned long long * count) {
 	printf("*");
 	fflush(stdout);
 }
+

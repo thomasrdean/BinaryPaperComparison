@@ -12,7 +12,6 @@
 -- names, this is left undone so that they fuzzers can manipulate name
 -- encoding and the ids can for check name encoding attacks.
 
-DNS DEFINITIONS ::= BEGIN
 
 	EXPORTS PDU;
 
@@ -48,7 +47,6 @@ DNS DEFINITIONS ::= BEGIN
 	-- used for answers, authority and additional fields
 	ResourceRecord ::= (
 		ResourceRecordA |
-		ResourceRecordNS |
 		ResourceRecordCNAME |
 		ResourceRecordSOA |
 		ResourceRecordPTR |

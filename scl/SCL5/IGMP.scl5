@@ -1,18 +1,13 @@
-IGMP DEFINITIONS ::= BEGIN
-
+IGMP DEFINITIONS ::= BEGIN 
    EXPORTS PDU;
    
 PDU ::= ( V3Report | Query | V2Report | V2Leave)
---<transfer>
---   Callback
---</transfer>
 
 Query ::= SEQUENCE {
    type INTEGER (SIZE 1 BYTES),
    maxRespTime INTEGER (SIZE 1 BYTES),
    checksum INTEGER (SIZE 2 BYTES),
    groupAddr INTEGER (SIZE 4 BYTES),
-   -- v3Add     set of V3Addition (SIZE DEFINED) -- really need opt (0 or 1)
    v3Add V3Addition (SIZE DEFINED) OPTIONAL
 }
 <transfer>
@@ -68,9 +63,9 @@ V3Report ::= SEQUENCE {
    Callback
 </transfer>
 
-GROUPRECORD ::= (V3LEAVE | V3JOIN | V3GENERALGROUP)
+GROUPRECORD ::= (V3IncludeMode | V3ExcludeMode | V3GENERALGROUP)
 
-V3LEAVE ::= SEQUENCE {
+V3IncludeMode ::= SEQUENCE {
    recordType INTEGER (SIZE 1 BYTES),
    auxDataLen INTEGER (SIZE 1 BYTES),
    numSources INTEGER (SIZE 2 BYTES),
@@ -78,12 +73,12 @@ V3LEAVE ::= SEQUENCE {
    srcAddrs SET OF SOURCEADDRESS (SIZE CONSTRAINED)
 } (ENCODED BY CUSTOM)
 <transfer>
-   Back{recordType == 1}
-   Back{numSources == 0}
+   Back{recordType == 1 || recordType == 3}
+   -- Back{numSources == 0}
    Forward{CARDINALITY(srcAddrs) == numSources}
 </transfer>
 
-V3JOIN ::= SEQUENCE {
+V3ExcludeMode ::= SEQUENCE {
    recordType INTEGER (SIZE 1 BYTES),
    auxDataLen INTEGER (SIZE 1 BYTES),
    numSources INTEGER (SIZE 2 BYTES),
@@ -92,7 +87,7 @@ V3JOIN ::= SEQUENCE {
 } (ENCODED BY CUSTOM)
 <transfer>
    Back{recordType == 2 || recordType == 4}
-   Back{numSources == 0}
+   -- Back{numSources == 0}
    Forward{CARDINALITY(srcAddrs) == numSources}
 </transfer>
 

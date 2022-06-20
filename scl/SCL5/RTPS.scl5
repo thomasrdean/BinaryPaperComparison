@@ -1,106 +1,125 @@
 
--- RTP DDS Protocol
+-- RTPS DDS Protocol
+-- Data Distribution Service is a publish subscriber network archicture that
+-- has multiple implementaitons. One implementation is based on CORBA with
+-- an Object Request Broker (ORB) and tcp streams between publishers and subscribers.
+-- Real Time Publisher Subcriber protocol (RTPS) is a UDP protocol that uses both
+-- multicast and unicast to handle real time updates between publishers and subscribers.
+
+-- this is a very complex protocol that was standardized  by Object Management Group.
+-- some of the difficulties is that messages can change endianness at various points in
+-- a message, and the endianness is inherited by subparts of the grammar. Different parts
+-- of the message can also have different encodings. It also has alignment requirements
+-- that change depeding on context and encoding.
+
+-- the grammar was first built for the IDS vesion of SCL, and the new version does not
+-- yet implement callbacks, so the Callback directive is not yet implemented (Feb 2022).
+
+-- one nice thing is that all packets begin with one of two magic numbers, which makes
+-- it easy to identify the protocol unlike the parsing ambicuities between NTP and DNS.
 
 RTPS DEFINITIONS ::= BEGIN
 
     EXPORTS PDU;
--- IMPORTS PDU FROM POINTSANDBOXES;
 
-PDU ::= (FULL | PING)
-<transfer>
--- Callback
--- Back { GLOBAL(x) }
-</transfer>
+    PDU ::= (FULL | PING)
 
-PING ::= SEQUENCE {
-    Header  HEADER (SIZE DEFINED),
-    ping    OCTET STRING (SIZE 8 BYTES)
-} (ENCODED BY CUSTOM)
-<transfer>
--- Back { Header.protoName == 1397773394 }
-Back { Header.protoName == 'RTPS' || Header.protoName == 'RTPX' } -- 0x52545053
-Back { ping == 5639707757994659399}
--- Back { GLOBAL(x) == 2 }
-Callback
-</transfer>
+    -- The Ping Packet is much more simple than the general RTPS packet. Just a header
+    -- and a predefined value.
+    -- PING is listed second in the Type Decision, so the default is to try and
+    -- parse as a Full RTPS packet.
+    PING ::= SEQUENCE {
+	Header  HEADER (SIZE DEFINED),
+	ping    OCTET STRING (SIZE 8 BYTES)
+    } (ENCODED BY CUSTOM)
+    <transfer>
+      Back { Header.protoName == 'RTPS' || Header.protoName == 'RTPX' } -- 0x52545053
+      Back { ping == 5639707757994659399}
+      Callback
+      All Bytes Used
+    </transfer>
 
-FULL ::= SEQUENCE {
-    Header  HEADER (SIZE DEFINED),
-    guidPrefix  GUIDPREFIX (SIZE DEFINED),
-    subMsg  SET OF SUBMESSAGE (SIZE CONSTRAINED)
-} (ENCODED BY CUSTOM)
-<transfer>
--- Back { Header.protoName == 1397773394 }
-    -- Back { Header.protoName == 1381257299 ||  Header.protoName == 1381257304 } -- 0x52545053
-    Back { Header.protoName == 'RTPS' || Header.protoName == 'RTPX' } -- 0x52545053
-    -- 'RTPS' -> 'R' << 24 + 'T' << 16 + 
-    Forward { END(subMsg) }
-    Callback
-    -- Back { GLOBAL(x) == 1 }
-</transfer>
+    -- Regular RTPS packets consist of a header, a global unique ID prefix and a set of submessages.
+    -- when callback is used, the callback is invoked for each of the submessages in order.
+    FULL ::= SEQUENCE {
+	Header  	HEADER (SIZE DEFINED),
+	guidPrefix  	GUIDPREFIX (SIZE DEFINED),
+	subMsg  	SET OF SUBMESSAGE (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    <transfer>
+	Back { Header.protoName == 'RTPS' || Header.protoName == 'RTPX' } -- 0x52545053
+	Forward { END(subMsg) }
+	Callback
+        All Bytes Used
+    </transfer>
 
+    -- Common to both PING and FULL
+    HEADER ::= SEQUENCE {
+	protoName	OCTET STRING  (SIZE 4 BYTES),
+	version	    	INTEGER (SIZE 2 BYTES),
+	vendorId	INTEGER (SIZE 2 BYTES)
+    } (ENCODED BY CUSTOM)
 
--- All RTPS have same header
-HEADER ::= SEQUENCE {
-    protoName	OCTET STRING  (SIZE 4 BYTES),
-    version	    INTEGER (SIZE 2 BYTES),
-    vendorId	INTEGER (SIZE 2 BYTES)
-} (ENCODED BY CUSTOM)
+    -- ALL Regulat RTPS packets have a global uid prefix
+    -- no real constraints on this structure
+    GUIDPREFIX ::= SEQUENCE {
+	hostID  INTEGER (SIZE 4 BYTES),
+	appID   INTEGER (SIZE 4 BYTES),
+	counter INTEGER (SIZE 4 BYTES)
+    } (ENCODED BY CUSTOM)
 
--- ALL RPTS have a guid prefix header
-GUIDPREFIX ::= SEQUENCE {
-    hostID  INTEGER (SIZE 4 BYTES),
-    appID   INTEGER (SIZE 4 BYTES),
-    counter INTEGER (SIZE 4 BYTES)
-} (ENCODED BY CUSTOM)
+    
+    SUBMESSAGE ::= (DATAPSUB | DATASUB | ACKNACK | HEARTBEAT | INFO_DST | INFO_TS | DATAWSUB | DATARSUB | GAP)
 
-SUBMESSAGE ::= (DATAPSUB | DATASUB | ACKNACK | HEARTBEAT | INFO_DST | INFO_TS | DATAWSUB | DATARSUB | GAP)
+    -- In the geral parsing sense, RTPS has only one DATA submessage (kind = 21).
+    DATAPSUB ::= SEQUENCE {
+	kind       INTEGER (SIZE 1 BYTES),
+	flags      INTEGER (SIZE 1 BYTES),
+	nextHeader INTEGER (SIZE 2 BYTES),
+	extraFlags INTEGER (SIZE 2 BYTES),
+	qosOffset  INTEGER (SIZE 2 BYTES),
+	readerEnt  ENTITYID (SIZE DEFINED) BIGENDIAN,
+	writerEnt  ENTITYID (SIZE DEFINED) BIGENDIAN,
+	writerSEQ  INTEGER (SIZE 8 BYTES),
+	inlineQos  QOSPARM (SIZE DEFINED) OPTIONAL,
+	serializedData PARTICIPANTS (SIZE DEFINED) OPTIONAL
+    } (ENCODED BY CUSTOM)
+    <transfer>
+	Back {kind == 21} -- 0x15
+	Back {writerEnt.kind == 194 } -- 0xc2
+	Back {writerEnt.key == 256 } -- 0x000100 
+	Forward { ENDIANNESS == flags & 1 }
+	Forward { EXISTS(inlineQos) == flags & 2 }
+	Forward { EXISTS(serializedData) == flags & 12 }
+    </transfer>
 
-DATASUB ::= SEQUENCE {
-    kind       INTEGER (SIZE 1 BYTES),
-    flags      INTEGER (SIZE 1 BYTES),
-    nextHeader INTEGER (SIZE 2 BYTES),
-    extraFlags INTEGER (SIZE 2 BYTES),
-    qosOffset  INTEGER (SIZE 2 BYTES),
-    readerEnt  ENTITYID (SIZE DEFINED) BIGENDIAN,
-    writerEnt  ENTITYID (SIZE DEFINED) BIGENDIAN,
-    writerSEQ  INTEGER (SIZE 8 BYTES),
-    inlineQos  QOSPARM (SIZE DEFINED) OPTIONAL,
-    serializedData OCTET STRING (SIZE CONSTRAINED)
---    dataLength INTEGER (SIZE 4 BYTES)
-    -- SerializedData -- size is based on next header
-    --		      -- type is based on writer Entity
- -- serialzedData GRAMMARHOOK (Size constrained)
-} (ENCODED BY CUSTOM)
-<transfer>
-Back {kind == 21} -- 0x15
-Back {writerEnt.kind == 2 || writerEnt.kind == 3 }
-Forward { ENDIANNESS == flags & 1 }
-Forward { EXISTS(inlineQos) == flags & 2 }
--- if nextheader==0 length(serializeddata)=pudlength -- number of byes left in the packet
--- if nextheader !=0 nextheade - pos(nextheadr) pos(inlineQUOS) + le
-
--- Forward { LENGTH(serializedData) == (nextheader) ? nextheader - (SIZEOF(extraFlags) + SIZEOF(qosOffset) + SIZEOF(readerEnt) + SIZEOF(writerEnt) + SIZEOF(writerSEQ) + SIZEOF(inlineQos)) : PDUREMAINING }
-
--- Forward { LENGTH(serializedData) == (nextHeader)? nextHeader-(37 - SIZE(inlineQOS)):remain}
-
--- Forward { LENGTH(serializedData) == (nextheader) ? nextHeader + SIZEOF(kind) + SIZEOF(flags) + SIZEOF(nextHeader) - TOTALLENGTH : PDUREMAINING }
--- length(serialzedData) ==   nextHeader - (pos(serialzedData) - POS(extraFlags))
-
-Forward { LENGTH(serializedData) == (nextHeader) ? nextHeader - (POS(serializedData) - POS(extraFlags)) : PDUREMAINING }
-</transfer>
--- SERIALIZEDAPPDATA ::= SEQUENCE {
-    -- ENCODING (1 BYTE)
-    -- FLAGS (1BYTE)
-    -- POINTSANDBOXES.PDU
---}
--- forward(searizeddata.appdata.)
+    DATASUB ::= SEQUENCE {
+	kind       INTEGER (SIZE 1 BYTES),
+	flags      INTEGER (SIZE 1 BYTES),
+	nextHeader INTEGER (SIZE 2 BYTES),
+	extraFlags INTEGER (SIZE 2 BYTES),
+	qosOffset  INTEGER (SIZE 2 BYTES),
+	readerEnt  ENTITYID (SIZE DEFINED) BIGENDIAN,
+	writerEnt  ENTITYID (SIZE DEFINED) BIGENDIAN,
+	writerSEQ  INTEGER (SIZE 8 BYTES),
+	inlineQos  QOSPARM (SIZE DEFINED) OPTIONAL,
+	serializedData OCTET STRING (SIZE CONSTRAINED)
+    } (ENCODED BY CUSTOM)
+    <transfer>
+	Back {kind == 21} -- 0x15
+	Back {writerEnt.kind == 2 || writerEnt.kind == 3 }
+	Forward { ENDIANNESS == flags & 1 }
+	Forward { EXISTS(inlineQos) == flags & 2 }
+	-- if nextheader==0 length(serializeddata)=pudlength -- number of byes left in the packet
+	-- if nextheader !=0 nextheade - pos(nextheadr) pos(inlineQUOS) + le
+	Forward { LENGTH(serializedData) == (nextHeader) ? nextHeader - (POS(serializedData) - POS(extraFlags)) : PDUREMAINING }
+    </transfer>
 
 QOSPARM ::= SEQUENCE {
     qos SET OF QOSPARMS (SIZE CONSTRAINED),
 } (ENCODED BY CUSTOM)
 <transfer>
-Forward { TERMINATE(qos) == PIDSENTINAL}
+  Forward { TERMINATE(qos) == PIDSENTINAL}
 </transfer>
 
 QOSPARMS  ::= (PIDSTATUSINFO | PIDKEYHASH | PIDSENTINAL)
@@ -121,8 +140,8 @@ PIDKEYHASH ::= SEQUENCE {
     guid             OCTET STRING (SIZE CONSTRAINED)
 } (ENCODED BY CUSTOM)
 <transfer>
-Back {parameterKind == 112 }
-Forward { LENGTH(guid) == parameterLength }
+  Back {parameterKind == 112 }
+  Forward { LENGTH(guid) == parameterLength }
 </transfer>
 
 TOPICS ::= SEQUENCE {
@@ -131,7 +150,7 @@ TOPICS ::= SEQUENCE {
     topicData SET OF TOPICPARMS (SIZE CONSTRAINED)    
 }
 <transfer>
-Forward { TERMINATE(topicData) == PIDSENTINAL}
+  Forward { TERMINATE(topicData) == PIDSENTINAL}
 </transfer>
 
 DATAWSUB ::= SEQUENCE {
@@ -148,7 +167,6 @@ DATAWSUB ::= SEQUENCE {
 } (ENCODED BY CUSTOM)
 <transfer>
 Back {kind == 21} -- 0x15
--- Back {writerEnt.key == 196608 } -- 0x000003  ENTITYID_BUILTIN_POUBLICATIONS_WRITER (little endian version)
 Back {writerEnt.kind == 194 } -- 0xc2
 Back {writerEnt.key == 3 } -- 0x000003  ENTITYID_BUILTIN_POUBLICATIONS_WRITER (little endian version)
 Forward { ENDIANNESS == flags & 1 }
@@ -476,6 +494,8 @@ Back {parameterKind == 32779 } --  0x800b
 Forward { LENGTH(ackKind) == parameterLength }
 </transfer>
 
+-- TODO this has an issue with alignment depending on the 
+-- platform. On some versions, the slack bytes are required.
 PIDTOPICNAME ::= SEQUENCE {
     parameterKind    INTEGER (SIZE 2 BYTES),
     parameterLength  INTEGER (SIZE 2 BYTES),
@@ -519,16 +539,25 @@ NESTEDSTRING ::= SEQUENCE {
     Forward { LENGTH(name) == nameLength }
 </transfer>
 
+-- TODO slack not implemented on a primitive type yet
+-- wrap primitve type in a sequence and add slack.
 PIDRELIABILITY ::= SEQUENCE {
     parameterKind    INTEGER (SIZE 2 BYTES),
     parameterLength  INTEGER (SIZE 2 BYTES),
-    reliabilityQOS   INTEGER (SIZE 4 BYTES),
-    slack	     OCTET STRING (SIZE CONSTRAINED)
+    reliabilityQOS   RELIABQUOS (SIZE DEFINED) SLACK,
+    -- reliabilityQOS   INTEGER (SIZE 4 BYTES),
+    -- slack	     OCTET STRING (SIZE CONSTRAINED)
 }
 <transfer>
 Back {parameterKind == 26 } -- 0x001a PID_RELIABILITY
-Forward { LENGTH(slack) == parameterLength - SIZEOF(reliabilityQOS) }
+Forward { LENGTH(reliabilityQOS) == parameterLength }
+-- TD Forward { LENGTH(slack) == parameterLength - SIZEOF(reliabilityQOS) }
 </transfer>
+
+RELIABQUOS::= SEQUENCE  {
+    reliabilityQOS   INTEGER (SIZE 4 BYTES),
+    duration	     INTEGER (SIZE 8 BYTES)
+}
 
 PIDENDPOINTGUID ::= SEQUENCE {
     parameterKind    INTEGER (SIZE 2 BYTES),
@@ -569,26 +598,6 @@ PARTICIPANTS ::= SEQUENCE {
 Forward { TERMINATE(particData) == PIDSENTINAL}
 </transfer>
 
-DATAPSUB ::= SEQUENCE {
-    kind       INTEGER (SIZE 1 BYTES),
-    flags      INTEGER (SIZE 1 BYTES),
-    nextHeader INTEGER (SIZE 2 BYTES),
-    extraFlags INTEGER (SIZE 2 BYTES),
-    qosOffset  INTEGER (SIZE 2 BYTES),
-    readerEnt  ENTITYID (SIZE DEFINED) BIGENDIAN,
-    writerEnt  ENTITYID (SIZE DEFINED) BIGENDIAN,
-    writerSEQ  INTEGER (SIZE 8 BYTES),
-    inlineQos  QOSPARM (SIZE DEFINED) OPTIONAL,
-    serializedData PARTICIPANTS (SIZE DEFINED) OPTIONAL
-} (ENCODED BY CUSTOM)
-<transfer>
-Back {kind == 21} -- 0x15
-Back {writerEnt.kind == 194 } -- 0xc2
-Back {writerEnt.key == 256 } -- 0x000100 
-Forward { ENDIANNESS == flags & 1 }
-Forward { EXISTS(inlineQos) == flags & 2 }
-Forward { EXISTS(serializedData) == flags & 12 }
-</transfer>
 
 DATARSUB ::= SEQUENCE {
     kind       INTEGER (SIZE 1 BYTES),
@@ -789,12 +798,13 @@ Forward {LENGTH(entityName) == parameterLength} -- 0x0059
 PIDPROPERTYLIST ::= SEQUENCE {
     parameterKind     INTEGER (SIZE 2 BYTES),
     parameterLength   INTEGER (SIZE 2 BYTES),
-    properties              PROPERTYLIST (SIZE DEFINED)
+    properties        PROPERTYLIST (SIZE DEFINED) -- should this also be SLACK?
 }
 <transfer>
 Back {parameterKind == 89} -- 0x0059
 Forward {LENGTH(properties) == parameterLength} -- 0x0059
 </transfer>
+
 
 PROPERTYLIST ::= SEQUENCE {
     numProperties    INTEGER (SIZE 4 BYTES),
@@ -808,7 +818,12 @@ PROPERTY ::= SEQUENCE {
     name    NESTEDSTRING (SIZE DEFINED) SLACK MOD 4,
     value   NESTEDSTRING (SIZE DEFINED) SLACK MOD 4
 }
-
+-- FEB 2020
+-- broken here. slack has two bytes. Need to fibgure out how
+-- to make sure the bytes are consumed, since these are all constant length
+-- for the lookahead algorithm. So if after PROTOCOLVERSIOIN bytes are consumed
+-- then have to see if the bytes consumed are equal to the bytes remainig, othersie
+-- consume the bytes...
 PIDPROTOVERSION ::= SEQUENCE {
     parameterKind     INTEGER (SIZE 2 BYTES),
     parameterLength   INTEGER (SIZE 2 BYTES),

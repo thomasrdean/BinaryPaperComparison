@@ -2,10 +2,10 @@
 #include "StringHash.h"
 #include "globals.h"
 
-#include "NTP_Generated.h"
-#include "ARP_Generated.h"
-#include "RTPS_Generated.h"
-#include "IGMP_Generated.h"
+//#include "NTP_Generated.h"
+#include "ARP_Definitions.h"
+//#include "RTPS_Generated.h"
+//#include "IGMP_Generated.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -13,7 +13,7 @@
 
 
 #define NoPrint
-
+#ifdef NOTNOW
 void Query_IGMP_callback(Query_IGMP * q, PDU * thePDU){
     if (traceFile) fprintf(traceFile,"\tIGMP QUERY");	
 }
@@ -100,4 +100,4 @@ void V3GENERALGROUP_IGMP_callback (V3Report_IGMP * v3report_igmp, V3GENERALGROUP
 
 
 
-
+#endif

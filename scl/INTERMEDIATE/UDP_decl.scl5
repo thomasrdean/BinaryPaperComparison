@@ -1,8 +1,0 @@
-UDP DEFINITIONS ::= BEGIN
-    IMPORTS
-        [PDU_RTPS ^ PDU] FROM RTPS,
-        [PDU_NTP ^ PDU] FROM NTP,
-        [PDU_DNS ^ PDU] FROM DNS;
-    [PDU_UDP ^ PDU] ::= (RTPS.PDU | NTP.PDU | DNS.PDU)
-
-END
