@@ -1,0 +1,11 @@
+BUILD
+!BUILD/Makefile
+!BUILD/callback.c
+!BUILD/globals.h
+!BUILD/pmain.c
+!BUILD/putilities.c
+!BUILD/putilities.h
+INTERMEDIATE
+!INTERMEDIATE/.gitkeep
+GENSOURCE
+!GENSOURCE/.gitkeep
