@@ -1,0 +1,27 @@
+I think I can make sclparsergenerator a submodule and then run `generateParser.sh` with flags that say to use current directory for BUILD, INTERMEDIATE and SCL5 directories.
+Then, I'll stick a Makefile in BUILD...
+
+Here is the command that worked to compile the grammar:
+`~/msc/sclparsergenerator/generateParser.sh -T ~/msc/sclparsergenerator/Txl --input SCL5 --tmp INTERMEDIATE --build BUILD/ --copy`
+As for the makefile, I just copied the one that is in sclparsergenerator.
+
+To make SCL parse DNS, you need to:
+    install TXL
+    clone sclparsergenerator?
+    `sudo apt install clang` to get `cc`
+    `sudo apt-get install libpcap-dev` to get pcap.h
+`~/msc/sclparsergenerator/generateParser.sh -T ~/msc/sclparsergenerator/Txl --input SCL5 --tmp INTERMEDIATE --build BUILD/ --copy`
+    `cp GENSOURCE/* BUILD` # for some reason the files weren't copied over
+    `sudo apt install gcc` # for some reason it needs gcc (not just cc)
+    get sclparsergenerator (submodule?)
+    compile grammar
+    `cd BUILD; make`
+    `touch my_trace_file`
+    `./bin/pcapparse ~/msc/dns.pcap -t my_trace_file`
+
+The problem I have right now is I'm not sure what I should make HeaderInfo look like and I think I have to define my own function `ntoh_` where _ is lll...? I need it to do byte order swapping for 128 bits.
+
+
+Dr. Dean says HeaderInfo should use a union of uint32_t and uint8_t asdf[16]; and uint8_t ip_v = 4 or 6 tells how to interpret.
+I should check if << 16 || stuff is coherent with docs for ip.
+No one is using IPv6 addresses in the SCL constraint engine, so don't worry about it too much.
