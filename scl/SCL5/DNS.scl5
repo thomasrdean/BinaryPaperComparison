@@ -196,14 +196,23 @@ DNS DEFINITIONS ::= BEGIN
 	ResourceRecordOPT ::= SEQUENCE {
 		name			Domain (SIZE DEFINED),
 		type			INTEGER (SIZE 2 BYTES),
-		udpPayloadSize		INTEGER (SIZE 2 BYTES),
-		higherBitsInExtdRcode	INTEGER (SIZE 1 BYTES),
-		EDNS0Version		INTEGER (SIZE 1 BYTES),
-		z			INTEGER (SIZE 2 BYTES),
-		dataLength		INTEGER (SIZE 2 BYTES)
+		class			INTEGER (SIZE 2 BYTES), // really UDP payload size
+		timeToLive		INTEGER (SIZE 4 BYTES), // 1 byte extnsion, 1 byte version, 1 bit DNSEC ok, 15 bits zero
+		dataLength		INTEGER (SIZE 2 BYTES),
+		optRecords		SET OF OptRecord (SIZE CONSTRAINED)
 	}
 	<transfer>
 		Back { type == 41 } -- code for OPT
+		Forward { Length(optRecords) == dataLength }
+	</transfer>
+
+	OptRecord ::= SEQUENCE {
+	       optCode			INTEGER (SIZE 2 BYTES),
+	       optLength		INTEGER (SIZE 2 BYTES),
+	       optData			OCTET STRING  (SIZE CONSTRAINED)
+	}
+	<transfer>
+		Forward { Length(optData) == optLength }
 	</transfer>
 
 	-- new resource record types (after rfc_1035)
