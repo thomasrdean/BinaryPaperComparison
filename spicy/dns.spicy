@@ -36,45 +36,35 @@ type ResourceRecord = unit() {
     dataLength:  uint16;
 
     switch ( self.type_ ) {
-        RRType::A    -> address:    bytes &size=4;
-        RRType::NS   -> nameServer:   Domain;
-        RRType::CNAME-> cname: Domain;
-        RRType::SOA  -> rr_body_soa:     RDataSOA;
-        RRType::PTR  -> domainName: Domain;
-        RRType::MX   -> rr_body_mx:      RDataMX;
-        RRType::TXT  -> text:     PascalString;
-        RRType::AAAA -> address:    bytes &size=16;
-        # OPT
-        # DS
-        # KEY
-        # RRSIG
-        # NSEC3
-        *            -> rdata:   bytes &size=self.dataLength;
+        RRType::A    -> bodyA: RRBodyA;
+        RRType::AAAA -> bodyAAAA: RRBodyAAAA;
+        RRType::CNAME-> bodyCNAME: RRBodyCNAME;
+        RRType::SOA  -> bodySOA: RRBodySOA;
+        RRType::OPT  -> bodyOPT: RRBodyOPT;
+        RRType::NS   -> bodyNS: RRBodyNS;
+        RRType::KEY  -> bodyKEY: RRBodyKEY;
+        RRType::SIG  -> bodyRRSIG: RRBodyRRSIG;
+        RRType::DS   -> bodyDS: RRBodyDS;
+        RRType::NSEC3 -> bodyNSEC3: RRBodyNSEC3;
+        *            -> rdata:   bytes &size=self.dataLength + 10000; # todo: throw error here?
     };
 };
 
 type RRType = enum {
     A = 1,
-    NS = 2,
-    MD = 3,
-    MF = 4,
+    AAAA = 28,
     CNAME = 5,
     SOA = 6,
-    MB = 7,
-    MG = 8,
-    MR = 9,
-    NULL = 10,
-    WKS = 11,
+    OPT = 41,
+    NS = 2,
+    KEY = 48,
+    SIG = 46,
+    DS = 43,
+    NSEC3 = 50,
+
     PTR = 12,
-    HINFO = 13,
-    MINFO = 14,
     MX = 15,
     TXT = 16,
-    AAAA = 28,
-    NBS = 32,
-    SRV= 33,
-    A6 = 38,
-    EDNS = 41
 };
 
 type RDataMX = unit {
@@ -117,4 +107,92 @@ type Word = unit() {
         0 ->    label: bytes &size=self.len.offset;
         3 ->    ptr: uint8;
     };
+};
+
+type Map = unit() {
+    mapNum: uint8;
+    length: uint8;
+    mapbits: bytes &size=self.length;
+};
+
+type RRBodyA = unit() {
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    address: addr &ipv4;
+};
+type RRBodyAAAA = unit() {
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    address: addr &ipv6;
+};
+type RRBodyCNAME = unit() {
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    cname: Domain;
+};
+type RRBodySOA = unit() {
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    primaryNameServer: Domain;
+    reponsibleAuthority: Domain;
+    serialNumber: uint32;
+    refreshInterval: uint32;
+    retryInterval: uint32;
+    expireLimit: uint32;
+    minimumTTL: uint32;
+};
+type RRBodyOPT = unit() {
+    udpPayloadSize: uint16;
+    higherBitsInExtendedRcode: uint8;
+    EDNS0Version: uint8;
+    z: uint16;
+    dataLength: uint16;
+};
+type RRBodyNS = unit() {
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    nameServer: Domain;
+};
+type RRBodyKEY = unit() {
+    class_: uint16;
+};
+type RRBodyRRSIG = unit() {
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    typeCov: uint16;
+    alg: uint8;
+    labels: uint8;
+    OrigtimeToLive: uint32;
+    SigExp: uint32;
+    SigInception: uint32;
+    keyTag: uint16;
+    signName: Domain;
+    signature: bytes &size=256;
+};
+type RRBodyDS = unit() {
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    keyid: uint16;
+    alg: uint8;
+    digestType: uint8;
+    digest: bytes &size=256;
+};
+type RRBodyNSEC3 = unit() { # copied from Tom's SCL code, which he is unsure of
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    alg: uint8;
+    flags: uint8;
+    iterations: uint16;
+    saltLength: uint8;
+    hashlength: uint8;
+    nexthash: bytes &size=self.hashlength;
+    typeMap: Map;
 };

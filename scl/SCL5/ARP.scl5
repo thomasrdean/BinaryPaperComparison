@@ -15,8 +15,8 @@ PDU ::= SEQUENCE {
 	targetMAC  		OCTET STRING (SIZE 6 BYTES),
 	targetIP  		INTEGER (SIZE 4 BYTES)
 } (ENCODED BY CUSTOM)
--- <transfer>
--- 	Callback
--- </transfer>
+<transfer>
+   Callback
+</transfer>
 
 END

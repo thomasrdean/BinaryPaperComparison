@@ -16,20 +16,48 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <netinet/in.h>
+
 #define true 1
 #define false 0
+
 typedef int bool;
 
-extern FILE * traceFile;
 extern char * progname;
+
+extern FILE * traceFileParser;
 extern FILE * traceFileCons;
-extern int learnmode;
-extern unsigned long long count;
-extern unsigned long long failed;
+extern FILE * traceFileAppParser;
+extern FILE * traceFileAppCons;
+extern FILE * rdfFile;
+
+extern unsigned long long pduCount;
+extern unsigned long long pduFailed;
+extern unsigned long long pduTtotal;
+
+extern char * traceFileParserName;
+extern char * traceFileConsName;
+extern char * traceFileAppParserName;
+extern char * traceFileAppConsName;
+extern char * pcapFileName;
+extern char * RDFFileName;
+extern char * envDirectory;
+
+extern int record;
+extern int debugLevel;
+
+
 
 struct HeaderInfo {
-	uint32_t srcIP;
-	uint32_t dstIP;
+    uint8_t ip_v; // version 4 or 6, detemines interpretation of srcIP and dstIP
+    union {
+        uint32_t v4;
+        uint8_t v6[16];
+    } srcIP;
+    union {
+        uint32_t v4;
+        uint8_t v6[16];
+    } dstIP;
 	uint16_t srcPort;
 	uint16_t dstPort;
 	long time;
@@ -44,6 +72,7 @@ union Data
 	int type;
 };
 
-
+#define BIGENDIAN (0x0)
+#define LITTLEENDIAN (0x1)
 
 #endif /* _GLOBALS_H_ */
