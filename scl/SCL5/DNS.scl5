@@ -192,12 +192,14 @@ DNS DEFINITIONS ::= BEGIN
 	</transfer>
 
 
-        -- OPT(41) ????
+        -- OPT(41)
 	ResourceRecordOPT ::= SEQUENCE {
 		name			Domain (SIZE DEFINED),
 		type			INTEGER (SIZE 2 BYTES),
-		class			INTEGER (SIZE 2 BYTES), -- really UDP payload size
-		timeToLive		INTEGER (SIZE 4 BYTES), -- 1 byte extnsion, 1 byte version, 1 bit DNSEC ok, 15 bits zero
+		udpPayloadSize  INTEGER (SIZE 2 BYTES),
+		extendedRCode	INTEGER (SIZE 1 BYTES),
+		version         INTEGER (SIZE 1 BYTES),
+		d0_z            OCTET STRING (SIZE 2 BYTES),
 		dataLength		INTEGER (SIZE 2 BYTES),
 		optRecords		SET OF OptRecord (SIZE CONSTRAINED)
 	}
