@@ -19,7 +19,7 @@ public type PDU = unit {
     additional: ResourceRecord[self.numAdditional];
     
     extraBytes: bytes &eod;
-    # on %done { print self; }
+    on %done { print self; }
 } &requires = |self.extraBytes| == 0;
 
 type Query = unit {
@@ -31,22 +31,23 @@ type Query = unit {
 type ResourceRecord = unit() {
     name:   Domain;
     type_:  uint16 &convert=RRType($$);
-    class:  uint16;
-    ttl:    uint32;
-    dataLength:  uint16;
+#    class:  uint16;
+#    ttl:    uint32;
+#    dataLength:  uint16;
 
     switch ( self.type_ ) {
         RRType::A    -> bodyA: RRBodyA;
         RRType::AAAA -> bodyAAAA: RRBodyAAAA;
         RRType::CNAME-> bodyCNAME: RRBodyCNAME;
         RRType::SOA  -> bodySOA: RRBodySOA;
+        RRType::TXT  -> bodyTXT: RRBodyTXT;
         RRType::OPT  -> bodyOPT: RRBodyOPT;
         RRType::NS   -> bodyNS: RRBodyNS;
         RRType::KEY  -> bodyKEY: RRBodyKEY;
         RRType::SIG  -> bodyRRSIG: RRBodyRRSIG;
         RRType::DS   -> bodyDS: RRBodyDS;
         RRType::NSEC3 -> bodyNSEC3: RRBodyNSEC3;
-        *            -> rdata:   bytes &size=self.dataLength + 10000; # todo: throw error here?
+        *            -> rdata:   bytes &size=0; # todo: throw error here?
     };
 };
 
@@ -55,6 +56,7 @@ type RRType = enum {
     AAAA = 28,
     CNAME = 5,
     SOA = 6,
+    TXT = 16,
     OPT = 41,
     NS = 2,
     KEY = 48,
@@ -64,38 +66,11 @@ type RRType = enum {
 
     PTR = 12,
     MX = 15,
-    TXT = 16,
-};
-
-type RDataMX = unit {
-    preference: uint16;
-    name:        Domain;
-};
-
-type RDataSOA = unit {
-    mname:      Domain;
-    rname:      Domain;
-    serial:     uint32;
-    refresh:    uint32 &convert=cast<interval>($$);
-    retry:      uint32 &convert=cast<interval>($$);
-    expire:     uint32 &convert=cast<interval>($$);
-    minimum:    uint32 &convert=cast<interval>($$);
-};
-
-type PascalString = unit {
-    len: uint8;
-    data: bytes &size=(self.len);
 };
 
 type Domain = unit {
     words: Word[] &until=($$.len.offset == 0 || $$.len.compressed != 0);
 };
-
-type Pointer = unit() {
-    len: bitfield(16) {
-        offset: 0..13;
-        };
-    };
 
 type Word = unit() {
     len: bitfield(8) {
@@ -144,6 +119,12 @@ type RRBodySOA = unit() {
     retryInterval: uint32;
     expireLimit: uint32;
     minimumTTL: uint32;
+};
+type RRBodyTXT = unit() {
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    text: bytes &size=self.dataLength;
 };
 type RRBodyOPT = unit() {
     udpPayloadSize: uint16;
