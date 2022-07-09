@@ -201,20 +201,11 @@ DNS DEFINITIONS ::= BEGIN
 		version         INTEGER (SIZE 1 BYTES),
 		d0_z            OCTET STRING (SIZE 2 BYTES),
 		dataLength		INTEGER (SIZE 2 BYTES),
-		optRecords		SET OF OptRecord (SIZE CONSTRAINED)
+		optRecords		OCTET STRING (SIZE CONSTRAINED)
 	}
 	<transfer>
 		Back { type == 41 } -- code for OPT
 		Forward { LENGTH(optRecords) == dataLength }
-	</transfer>
-
-	OptRecord ::= SEQUENCE {
-	       optCode			INTEGER (SIZE 2 BYTES),
-	       optLength		INTEGER (SIZE 2 BYTES),
-	       optData			OCTET STRING  (SIZE CONSTRAINED)
-	}
-	<transfer>
-		Forward { LENGTH(optData) == optLength }
 	</transfer>
 
 	-- new resource record types (after rfc_1035)
