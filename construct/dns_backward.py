@@ -28,44 +28,44 @@ ipv6Address = Byte[16]
 map_ = Struct(
   "mapNum" / Int8ub,
   "length" / Int8ub,
-  "mapbits" / Byte[lambda ctx: ctx["length"]],
+  "mapbits" / Byte[this.length],
 )
 
 rrA = Struct(
-  "names" / domain,
+  "name" / domain,
   "type" / Int16ub,
   Check(this.type == 0x01),
-  "class_" / Int16ub,
+  "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
   "address" / ipv4Address,
 )
-rrAAAA = Struct(
-  "names" / domain,
+rrNS = Struct(
+  "name" / domain,
   "type" / Int16ub,
-  Check(this.type == 0x1c), # 28
-  "class_" / Int16ub,
+  Check(this.type == 0x02),
+  "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
-  "address" / ipv6Address,
+  "nameerver" / domain,
 )
 rrCNAME = Struct(
-  "names" / domain,
+  "name" / domain,
   "type" / Int16ub,
   Check(this.type == 0x05),
-  "class_" / Int16ub,
+  "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
   "cname" / domain,
 )
 rrSOA = Struct(
-  "names" / domain,
+  "name" / domain,
   "type" / Int16ub,
   Check(this.type == 0x06),
-  "class_" / Int16ub,
+  "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
-  "primaryNameServer" / domain,
+  "primarynameerver" / domain,
   "reponsibleAuthority" / domain,
   "serialNumber" / Int32ub,
   "refreshInterval" / Int32ub,
@@ -73,36 +73,71 @@ rrSOA = Struct(
   "expireLimit" / Int32ub,
   "minimumTTL" / Int32ub,
 )
+rrPTR = Struct(
+  "name" / domain,
+  "type" / Int16ub,
+  Check(this.type == 0x0c), # 12
+  "class" / Int16ub,
+  "timeToLive" / Int32ub,
+  "dataLength" / Int16ub,
+  "domainName" / domain,
+)
+rrMX = Struct(
+  "name" / domain,
+  "type" / Int16ub,
+  Check(this.type == 0x0f), # 15
+  "class" / Int16ub,
+  "timeToLive" / Int32ub,
+  "dataLength" / Int16ub,
+  "preference" / Int16ub,
+  "mailExchange" / domain,
+)
+rrTXT = Struct(
+  "name" / domain,
+  "type" / Int16ub,
+  Check(this.type == 0x10), # 16
+  "class" / Int16ub,
+  "timeToLive" / Int32ub,
+  "dataLength" / Int16ub,
+  "text" / Byte[this.dataLength],
+)
+rrAAAA = Struct(
+  "name" / domain,
+  "type" / Int16ub,
+  Check(this.type == 0x1c), # 28
+  "class" / Int16ub,
+  "timeToLive" / Int32ub,
+  "dataLength" / Int16ub,
+  "address" / ipv6Address,
+)
 rrOPT = Struct(
-  "names" / domain,
+  "name" / domain,
   "type" / Int16ub,
   Check(this.type == 0x29), # 41
   "udpPayloadSize" / Int16ub,
-  "higherBitsInExtendedRcode" / Int8ub,
-  "EDNS0Version" / Int8ub,
-  "z" / Int16ub,
+  "extendedRCode" / Int8ub,
+  "version" / Int8ub,
+  "d0_z" / Int16ub,
   "dataLength" / Int16ub,
+  "optRecords" / Byte[this.dataLength],
 )
-rrNS = Struct(
-  "names" / domain,
+rrDS = Struct(
+  "name" / domain,
   "type" / Int16ub,
-  Check(this.type == 0x02),
-  "class_" / Int16ub,
+  Check(this.type == 0x2b), # 43
+  "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
-  "nameServer" / domain,
-)
-rrKEY = Struct(
-  "names" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x30), # 48
-  "class_" / Int16ub,
+  "keyid" / Int16ub,
+  "alg" / Int8ub,
+  "digestType" / Int8ub,
+  "digest" / Byte[32],
 )
 rrRRSIG = Struct(
-  "names" / domain,
+  "name" / domain,
   "type" / Int16ub,
   Check(this.type == 0x2e), # 46
-  "class_" / Int16ub,
+  "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
   "typeCov" / Int16ub,
@@ -115,23 +150,17 @@ rrRRSIG = Struct(
   "signName" / domain,
   "signature" / Byte[256],
 )
-rrDS = Struct(
-  "names" / domain,
+rrKEY = Struct(
+  "name" / domain,
   "type" / Int16ub,
-  Check(this.type == 0x2b), # 43
-  "class_" / Int16ub,
-  "timeToLive" / Int32ub,
-  "dataLength" / Int16ub,
-  "keyid" / Int16ub,
-  "alg" / Int8ub,
-  "digestType" / Int8ub,
-  "digest" / Byte[32],
+  Check(this.type == 0x30), # 48
+  "class" / Int16ub,
 )
 rrNSEC3 = Struct( # copied from Tom's SCL code, which he is unsure of
-  "names" / domain,
+  "name" / domain,
   "type" / Int16ub,
   Check(this.type == 0x32), # 50
-  "class_" / Int16ub,
+  "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
   "alg" / Int8ub,
@@ -139,20 +168,23 @@ rrNSEC3 = Struct( # copied from Tom's SCL code, which he is unsure of
   "iterations" / Int16ub,
   "saltLength" / Int8ub,
   "hashlength" / Int8ub,
-  "nexthash" / Byte[lambda ctx: ctx["hashlength"]],
+  "nexthash" / Byte[this.hashlength],
   "typeMap" / map_,
 )
 
 resource_record = Select(
     rrA,
-    rrAAAA,
+    rrNS,
     rrCNAME,
     rrSOA,
+    rrPTR,
+    rrMX,
+    rrTXT,
+    rrAAAA,
     rrOPT,
-    rrNS,
+    rrDS,
     rrKEY,
     rrRRSIG,
-    rrDS,
     rrNSEC3,
 )
 
