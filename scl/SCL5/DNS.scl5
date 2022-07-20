@@ -57,8 +57,8 @@ DNS DEFINITIONS ::= BEGIN
 		ResourceRecordAAAA |
 		ResourceRecordOPT |
 		ResourceRecordDS |
-		ResourceRecordKEY |
 		ResourceRecordRRSIG |
+		ResourceRecordKEY |
 		ResourceRecordNSEC3  
 	)
 
@@ -156,7 +156,7 @@ DNS DEFINITIONS ::= BEGIN
 		class		INTEGER (SIZE 2 BYTES),
 		timeToLive	INTEGER (SIZE 4 BYTES),
 		dataLength	INTEGER (SIZE 2 BYTES),
-		prefernece	INTEGER (SIZE 2 BYTES),
+		preference	INTEGER (SIZE 2 BYTES),
 		mailExchange	Domain (SIZE DEFINED)
 	}
 	<transfer>
