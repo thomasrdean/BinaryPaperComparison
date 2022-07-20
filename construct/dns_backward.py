@@ -155,6 +155,12 @@ rrKEY = Struct(
   "type" / Int16ub,
   Check(this.type == 0x30), # 48
   "class" / Int16ub,
+  "timeToLive" / Int32ub,
+  "dataLength" / Int16ub,
+  "flags" / Int16ub,
+  "protocol" / Int8ub,
+  "algorithm" / Int8ub,
+  "key" / Byte[this.dataLength - 4],
 )
 rrNSEC3 = Struct( # copied from Tom's SCL code, which he is unsure of
   "name" / domain,
