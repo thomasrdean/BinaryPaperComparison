@@ -148,15 +148,16 @@ type RRBodyRRSIG = unit() {
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
-    typeCov: uint16;
-    alg: uint8;
-    labels: uint8;
-    OrigtimeToLive: uint32;
-    SigExp: uint32;
-    SigInception: uint32;
-    keyTag: uint16;
-    signName: Domain;
-    signature: bytes &size=256;
+    data: bytes &size=self.dataLength;
+    #typeCov: uint16;
+    #alg: uint8;
+    #labels: uint8;
+    #OrigtimeToLive: uint32;
+    #SigExp: uint32;
+    #SigInception: uint32;
+    #keyTag: uint16;
+    #signName: Domain;
+    #signature: bytes &size=256;
 };
 type RRBodyKEY = unit() {
     class_: uint16;
