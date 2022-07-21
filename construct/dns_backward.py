@@ -4,7 +4,7 @@ from construct.lib import *
 word = Select(
     "ref" / Struct(
         "first_byte" / Int8ub,
-        Check(this.first_byte == 0xc0),
+        Check(this.first_byte >= 0xc0),
         "ref" / Int8ub,
     ),
     # `Select` tries subcons in order, so `label` is only tried if `ref` fails
@@ -140,15 +140,16 @@ rrRRSIG = Struct(
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
-  "typeCov" / Int16ub,
-  "alg" / Int8ub,
-  "labels" / Int8ub,
-  "OrigtimeToLive" / Int32ub,
-  "SigExp" / Int32ub,
-  "SigInception" / Int32ub,
-  "keyTag" / Int16ub,
-  "signName" / domain,
-  "signature" / Byte[256],
+  "data" / Byte[this.dataLength],
+  #"typeCov" / Int16ub,
+  #"alg" / Int8ub,
+  #"labels" / Int8ub,
+  #"OrigtimeToLive" / Int32ub,
+  #"SigExp" / Int32ub,
+  #"SigInception" / Int32ub,
+  #"keyTag" / Int16ub,
+  #"signName" / domain,
+  #"signature" / Byte[256], # this is incorrect
 )
 rrKEY = Struct(
   "name" / domain,
