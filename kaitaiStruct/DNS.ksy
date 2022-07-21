@@ -1,7 +1,7 @@
 meta:
   id: dns_packet
   endian: be
-  encoding: ASCII
+  encoding: utf-8
 seq:
   - id: transaction_id
     type: u2
@@ -68,6 +68,17 @@ types:
             "rr_type::rrsig": rr_body_rrsig
             "rr_type::key": rr_body_key
             "rr_type::nsec3": rr_body_nsec3
+            _: unknown
+  unknown:
+    seq:
+      - id: class_
+        type: u2
+      - id: time_to_live
+        type: u4
+      - id: data_length
+        type: u2
+      - id: data
+        size: data_length
   rr_body_a:
     seq:
       - id: class_
@@ -201,25 +212,26 @@ types:
         type: u4
       - id: data_length
         type: u2
-      - id: type_cov
-        type: u2
-      - id: alg
-        type: u1
-      - id: labels
-        type: u1
-      - id: orig_time_to_live
-        type: u4
-      - id: sig_exp
-        type: u4
-      - id: sig_inception
-        type: u4
-      - id: key_tag
-        type: u2
-      - id: sign_name
-        type: domain
-      - id: signature
-        type: str
-        size: 256
+      - id: data
+        size: data_length
+      #- id: type_cov
+      #  type: u2
+      #- id: alg
+      #  type: u1
+      #- id: labels
+      #  type: u1
+      #- id: orig_time_to_live
+      #  type: u4
+      #- id: sig_exp
+      #  type: u4
+      #- id: sig_inception
+      #  type: u4
+      #- id: key_tag
+      #  type: u2
+      #- id: sign_name
+      #  type: domain
+      #- id: signature
+      #  size: 256
   rr_body_key:
     seq:
       - id: class_
@@ -229,7 +241,7 @@ types:
       - id: data_length
         type: u2
       - id: flags
-        type: u1
+        type: u2
       - id: protocol
         type: u1
       - id: algorithm
@@ -255,7 +267,6 @@ types:
       - id: hash_length
         type: u1
       - id: next_hash
-        type: str
         size: hash_length
       - id: type_map
         type: map_
@@ -287,7 +298,7 @@ types:
         size: length
     instances:
       is_ref:
-        value: length == 192
+        value: length >= 192
   ipv4_address:
     seq:
       - id: ip
