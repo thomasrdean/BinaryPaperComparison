@@ -7,7 +7,7 @@ typedef byte uint8;
 typedef struct {
   ubyte length;
   if(length != 0) {
-    if (length != (ubyte) 192) {
+    if (length < (ubyte) 192) {
       ubyte letters[length];
     } else {
       ubyte reference;
@@ -20,7 +20,7 @@ typedef struct {
   do {
     Word words;
     length++;
-  } while(words.length != 0 && words.length != 192);
+  } while(words.length != 0 && words.length < 192);
 } Domain;
 
 typedef struct {
@@ -53,8 +53,8 @@ typedef struct {
   uint16 class_;
   uint32 timeToLive;
   uint16 dataLength;
-  Ipv6Address address;
-} RRBodyAAAA;
+  Domain nameServer;
+} RRBodyNS;
 typedef struct {
   uint16 class_;
   uint32 timeToLive;
@@ -74,35 +74,38 @@ typedef struct {
   uint32 minimumTTL;
 } RRBodySOA;
 typedef struct {
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  Domain domainName;
+} RRBodyPTR;
+typedef struct {
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  uint16 preference;
+  Domain mailExchange;
+} RRBodyMX;
+typedef struct {
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  char text[dataLength];
+} RRBodyTXT;
+typedef struct {
+  uint16 class_;
+  uint32 timeToLive;
+  uint16 dataLength;
+  Ipv6Address address;
+} RRBodyAAAA;
+typedef struct {
   uint16 udpPayloadSize;
   uint8 higherBitsInExtendedRcode;
   uint8 EDNS0Version;
   uint16 z;
   uint16 dataLength;
+  char optRecords[dataLength];
 } RRBodyOPT;
-typedef struct {
-  uint16 class_;
-  uint32 timeToLive;
-  uint16 dataLength;
-  Domain nameServer;
-} RRBodyNS;
-typedef struct {
-  uint16 class_;
-} RRBodyKEY;
-typedef struct {
-  uint16 class_;
-  uint32 timeToLive;
-  uint16 dataLength;
-  uint16 typeCov;
-  uint8 alg;
-  uint8 labels;
-  uint32 OrigtimeToLive;
-  uint32 SigExp;
-  uint32 SigInception;
-  uint16 keyTag;
-  Domain signName;
-  char signature[256];
-} RRBodyRRSIG;
 typedef struct {
   uint16 class_;
   uint32 timeToLive;
@@ -112,6 +115,30 @@ typedef struct {
   uint8 digestType;
   char digest[32];
 } RRBodyDS;
+typedef struct {
+  uint16 class_;
+  uint32 timetolive;
+  uint16 dataLength;
+  char data[dataLength];
+  //uint16 typeCov;
+  //uint8 alg;
+  //uint8 labels;
+  //uint32 OrigtimeToLive;
+  //uint32 SigExp;
+  //uint32 SigInception;
+  //uint16 keyTag;
+  //Domain signName;
+  //char signature[256];
+} RRBodyRRSIG;
+typedef struct {
+  uint16 class_;
+  uint32 timetolive;
+  uint16 dataLength;
+  uint16 flags;
+  uint8 protocol;
+  uint8 algorithm;
+  char key[dataLength - 4];
+} RRBodyKEY;
 typedef struct { // copied from Tom's SCL code, which he is unsure of
   uint16 class_;
   uint32 timeToLive;
@@ -130,14 +157,17 @@ typedef struct {
   uint16 type_;
   switch(type_) {
     case 1: RRBodyA body; break;
-    case 28: RRBodyAAAA body; break;
+    case 2: RRBodyNS body; break;
     case 5: RRBodyCNAME body; break;
     case 6: RRBodySOA body; break;
+    case 12: RRBodyPTR body; break;
+    case 15: RRBodyMX body; break;
+    case 16: RRBodyTXT body; break;
+    case 28: RRBodyAAAA body; break;
     case 41: RRBodyOPT body; break;
-    case 2: RRBodyNS body; break;
-    case 48: RRBodyKEY body; break;
-    case 46: RRBodyRRSIG body; break;
     case 43: RRBodyDS body; break;
+    case 46: RRBodyRRSIG body; break;
+    case 48: RRBodyKEY body; break;
     case 50: RRBodyNSEC3 body; break;
   }
 } ResourceRecord;
@@ -153,8 +183,4 @@ struct DNS {
   ResourceRecord answer[numAnswer];
   ResourceRecord authority[numAuthority];
   ResourceRecord additional[numAdditional];
-  while(!FEof()) {
-    ubyte extraBytes;
-    //Exit(1);
-  }
 } file;
