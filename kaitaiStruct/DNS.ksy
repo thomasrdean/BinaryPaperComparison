@@ -68,17 +68,6 @@ types:
             "rr_type::rrsig": rr_body_rrsig
             "rr_type::key": rr_body_key
             "rr_type::nsec3": rr_body_nsec3
-            _: unknown
-  unknown:
-    seq:
-      - id: class_
-        type: u2
-      - id: time_to_live
-        type: u4
-      - id: data_length
-        type: u2
-      - id: data
-        size: data_length
   rr_body_a:
     seq:
       - id: class_

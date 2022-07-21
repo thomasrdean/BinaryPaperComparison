@@ -16,6 +16,9 @@ class DnsPacket(KaitaiStruct):
         ns = 2
         cname = 5
         soa = 6
+        ptr = 12
+        mx = 15
+        txt = 16
         aaaa = 28
         opt = 41
         ds = 43
@@ -65,7 +68,21 @@ class DnsPacket(KaitaiStruct):
         def _read(self):
             self.map_num = self._io.read_u1()
             self.length = self._io.read_u1()
-            self.map_bits = (self._io.read_bytes(self.length)).decode(u"utf-8")
+            self.map_bits = self._io.read_bytes(self.length)
+
+
+    class RrBodyTxt(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.class_ = self._io.read_u2be()
+            self.time_to_live = self._io.read_u4be()
+            self.data_length = self._io.read_u2be()
+            self.text = (self._io.read_bytes(self.data_length)).decode(u"utf-8")
 
 
     class Fail(KaitaiStruct):
@@ -99,18 +116,41 @@ class DnsPacket(KaitaiStruct):
                 self.body = DnsPacket.RrBodyNs(self._io, self, self._root)
             elif _on == DnsPacket.RrType.key:
                 self.body = DnsPacket.RrBodyKey(self._io, self, self._root)
+            elif _on == DnsPacket.RrType.txt:
+                self.body = DnsPacket.RrBodyTxt(self._io, self, self._root)
             elif _on == DnsPacket.RrType.cname:
                 self.body = DnsPacket.RrBodyCname(self._io, self, self._root)
             elif _on == DnsPacket.RrType.opt:
                 self.body = DnsPacket.RrBodyOpt(self._io, self, self._root)
             elif _on == DnsPacket.RrType.rrsig:
                 self.body = DnsPacket.RrBodyRrsig(self._io, self, self._root)
+            elif _on == DnsPacket.RrType.ptr:
+                self.body = DnsPacket.RrBodyPtr(self._io, self, self._root)
+            elif _on == DnsPacket.RrType.mx:
+                self.body = DnsPacket.RrBodyMx(self._io, self, self._root)
             elif _on == DnsPacket.RrType.nsec3:
                 self.body = DnsPacket.RrBodyNsec3(self._io, self, self._root)
             elif _on == DnsPacket.RrType.aaaa:
                 self.body = DnsPacket.RrBodyAaaa(self._io, self, self._root)
             elif _on == DnsPacket.RrType.soa:
                 self.body = DnsPacket.RrBodySoa(self._io, self, self._root)
+            else:
+                self.body = DnsPacket.Unknown(self._io, self, self._root)
+
+
+    class RrBodyMx(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.class_ = self._io.read_u2be()
+            self.time_to_live = self._io.read_u4be()
+            self.data_length = self._io.read_u2be()
+            self.preference = self._io.read_u2be()
+            self.mail_exchange = DnsPacket.Domain(self._io, self, self._root)
 
 
     class RrBodyOpt(KaitaiStruct):
@@ -122,10 +162,11 @@ class DnsPacket(KaitaiStruct):
 
         def _read(self):
             self.udp_payload_size = self._io.read_u2be()
-            self.higher_bits_in_extended_rcode = self._io.read_u1()
-            self.edns0version = self._io.read_u1()
-            self.z = self._io.read_u2be()
+            self.extended_r_code = self._io.read_u1()
+            self.version = self._io.read_u1()
+            self.d0_z = self._io.read_u2be()
             self.data_length = self._io.read_u2be()
+            self.opt_records = self._io.read_bytes(self.data_length)
 
 
     class RrBodyKey(KaitaiStruct):
@@ -137,6 +178,12 @@ class DnsPacket(KaitaiStruct):
 
         def _read(self):
             self.class_ = self._io.read_u2be()
+            self.time_to_live = self._io.read_u4be()
+            self.data_length = self._io.read_u2be()
+            self.flags = self._io.read_u2be()
+            self.protocol = self._io.read_u1()
+            self.algorithm = self._io.read_u1()
+            self.key = self._io.read_bytes((self.data_length - 4))
 
 
     class Domain(KaitaiStruct):
@@ -181,6 +228,20 @@ class DnsPacket(KaitaiStruct):
             self.query_class = self._io.read_u2be()
 
 
+    class Unknown(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.class_ = self._io.read_u2be()
+            self.time_to_live = self._io.read_u4be()
+            self.data_length = self._io.read_u2be()
+            self.data = self._io.read_bytes(self.data_length)
+
+
     class RrBodyRrsig(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
@@ -192,15 +253,7 @@ class DnsPacket(KaitaiStruct):
             self.class_ = self._io.read_u2be()
             self.time_to_live = self._io.read_u4be()
             self.data_length = self._io.read_u2be()
-            self.type_cov = self._io.read_u2be()
-            self.alg = self._io.read_u1()
-            self.labels = self._io.read_u1()
-            self.orig_time_to_live = self._io.read_u4be()
-            self.sig_exp = self._io.read_u4be()
-            self.sig_inception = self._io.read_u4be()
-            self.key_tag = self._io.read_u2be()
-            self.sign_name = DnsPacket.Domain(self._io, self, self._root)
-            self.signature = (self._io.read_bytes(256)).decode(u"utf-8")
+            self.data = self._io.read_bytes(self.data_length)
 
 
     class Ipv4Address(KaitaiStruct):
@@ -270,7 +323,7 @@ class DnsPacket(KaitaiStruct):
             self.keyid = self._io.read_u2be()
             self.alg = self._io.read_u1()
             self.digest_type = self._io.read_u1()
-            self.digest = (self._io.read_bytes(32)).decode(u"utf-8")
+            self.digest = self._io.read_bytes(32)
 
 
     class RrBodyNsec3(KaitaiStruct):
@@ -289,8 +342,22 @@ class DnsPacket(KaitaiStruct):
             self.iterations = self._io.read_u2be()
             self.salt_length = self._io.read_u1()
             self.hash_length = self._io.read_u1()
-            self.next_hash = (self._io.read_bytes(self.hash_length)).decode(u"utf-8")
+            self.next_hash = self._io.read_bytes(self.hash_length)
             self.type_map = DnsPacket.Map(self._io, self, self._root)
+
+
+    class RrBodyPtr(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.class_ = self._io.read_u2be()
+            self.time_to_live = self._io.read_u4be()
+            self.data_length = self._io.read_u2be()
+            self.domain_name = DnsPacket.Domain(self._io, self, self._root)
 
 
     class RrBodyA(KaitaiStruct):
@@ -328,7 +395,7 @@ class DnsPacket(KaitaiStruct):
             if hasattr(self, '_m_is_ref'):
                 return self._m_is_ref if hasattr(self, '_m_is_ref') else None
 
-            self._m_is_ref = self.length == 192
+            self._m_is_ref = self.length >= 192
             return self._m_is_ref if hasattr(self, '_m_is_ref') else None
 
 
