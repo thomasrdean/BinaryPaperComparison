@@ -202,25 +202,28 @@ types:
       - id: data_length
         type: u2
       - id: data
+        type: rr_body_rrsig_helper
         size: data_length
-      #- id: type_cov
-      #  type: u2
-      #- id: alg
-      #  type: u1
-      #- id: labels
-      #  type: u1
-      #- id: orig_time_to_live
-      #  type: u4
-      #- id: sig_exp
-      #  type: u4
-      #- id: sig_inception
-      #  type: u4
-      #- id: key_tag
-      #  type: u2
-      #- id: sign_name
-      #  type: domain
-      #- id: signature
-      #  size: 256
+  rr_body_rrsig_helper:
+    seq:
+      - id: type_cov
+        type: u2
+      - id: alg
+        type: u1
+      - id: labels
+        type: u1
+      - id: orig_time_to_live
+        type: u4
+      - id: sig_exp
+        type: u4
+      - id: sig_inception
+        type: u4
+      - id: key_tag
+        type: u2
+      - id: sign_name
+        type: domain
+      - id: signature
+        size-eos: true
   rr_body_key:
     seq:
       - id: class_
