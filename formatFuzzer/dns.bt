@@ -119,16 +119,15 @@ typedef struct {
   uint16 class_;
   uint32 timetolive;
   uint16 dataLength;
-  char data[dataLength];
-  //uint16 typeCov;
-  //uint8 alg;
-  //uint8 labels;
-  //uint32 OrigtimeToLive;
-  //uint32 SigExp;
-  //uint32 SigInception;
-  //uint16 keyTag;
-  //Domain signName;
-  //char signature[256];
+  uint16 typeCov;
+  uint8 alg;
+  uint8 labels;
+  uint32 OrigtimeToLive;
+  uint32 SigExp;
+  uint32 SigInception;
+  uint16 keyTag;
+  Domain signName;
+  char signature[dataLength - sizeof(signName) - 18];
 } RRBodyRRSIG;
 typedef struct {
   uint16 class_;
