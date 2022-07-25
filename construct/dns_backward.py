@@ -133,6 +133,8 @@ rrDS = Struct(
   "digestType" / Int8ub,
   "digest" / Byte[32],
 )
+def len_of_sig(ctx):
+    return ctx.dataLength - (ctx._io.tell() - ctx.IOIndexBeforeData)
 rrRRSIG = Struct(
   "name" / domain,
   "type" / Int16ub,
@@ -140,16 +142,16 @@ rrRRSIG = Struct(
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
-  "data" / Byte[this.dataLength],
-  #"typeCov" / Int16ub,
-  #"alg" / Int8ub,
-  #"labels" / Int8ub,
-  #"OrigtimeToLive" / Int32ub,
-  #"SigExp" / Int32ub,
-  #"SigInception" / Int32ub,
-  #"keyTag" / Int16ub,
-  #"signName" / domain,
-  #"signature" / Byte[256], # this is incorrect
+  "IOIndexBeforeData" / Computed(lambda ctx: ctx._io.tell()),
+  "typeCov" / Int16ub,
+  "alg" / Int8ub,
+  "labels" / Int8ub,
+  "OrigtimeToLive" / Int32ub,
+  "SigExp" / Int32ub,
+  "SigInception" / Int32ub,
+  "keyTag" / Int16ub,
+  "signName" / domain,
+  "signature" / Byte[len_of_sig],
 )
 rrKEY = Struct(
   "name" / domain,
