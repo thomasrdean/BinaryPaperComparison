@@ -42,14 +42,17 @@ resourceRecord:
   ;
 rrBody
   : resourceRecordA
-  | resourceRecordAAAA
+  | resourceRecordNS
   | resourceRecordCNAME
   | resourceRecordSOA
+  | resourceRecordPTR
+  | resourceRecordMX
+  | resourceRecordTXT
+  | resourceRecordAAAA
   | resourceRecordOPT
-  | resourceRecordNS
-  | resourceRecordKEY
-  | resourceRecordRRSIG
   | resourceRecordDS
+  | resourceRecordRRSIG
+  | resourceRecordKEY
   | resourceRecordNSEC3
   ;
 resourceRecordA:
@@ -59,12 +62,12 @@ resourceRecordA:
   dataLength=uint16
   address=ipv4Address
   ;
-resourceRecordAAAA:
-  type_=typeAAAA
+resourceRecordNS:
+  type_=typeNS
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
-  address=ipv6Address
+  nameServer=domain
   ;
 resourceRecordCNAME:
   type_=typeCNAME
@@ -86,39 +89,43 @@ resourceRecordSOA:
   expireLimit=uint32
   minimumTTL=uint32
   ;
-resourceRecordOPT:
-  type_=typeOPT
-  udpPayloadSize=uint16
-  higherBitsInExtendedRcode=uint8
-  EDNS0Version=uint8
-  z=uint16
-  dataLength=uint16
-  ;
-resourceRecordNS:
+resourceRecordPTR:
   type_=typeNS
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
-  nameServer=domain
+  domainName=domain
   ;
-resourceRecordKEY:
-  type_=typeKEY
-  class_=uint16
-  ;
-resourceRecordRRSIG:
-  type_=typeRRSIG
+resourceRecordMX:
+  type_=typeNS
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
-  typeCov=uint16
-  alg=uint8
-  labels=uint8
-  OrigtimeToLive=uint32
-  SigExp=uint32
-  SigInception=uint32
-  keyTag=uint16
-  signName=domain
-  signature=string[256]
+  preference=uint16
+  mailExchange=domain
+  ;
+resourceRecordTXT:
+  type_=typeNS
+  class_=uint16
+  timeToLive=uint32
+  dataLength=uint16
+  text=string[$dataLength.val]
+  ;
+resourceRecordAAAA:
+  type_=typeAAAA
+  class_=uint16
+  timeToLive=uint32
+  dataLength=uint16
+  address=ipv6Address
+  ;
+resourceRecordOPT:
+  type_=typeOPT
+  udpPayloadSize=uint16
+  extendedRCode=uint8
+  version=uint8
+  d0_z=uint16
+  dataLength=uint16
+  optRecords=string[$dataLength.val]
   ;
 resourceRecordDS:
   type_=typeDS
@@ -129,6 +136,32 @@ resourceRecordDS:
   alg=uint8
   digestType=uint8
   digest=string[32]
+  ;
+resourceRecordRRSIG:
+  type_=typeRRSIG
+  class_=uint16
+  timeToLive=uint32
+  dataLength=uint16
+  data=string[$dataLength.val]
+  //typeCov=uint16
+  //alg=uint8
+  //labels=uint8
+  //OrigtimeToLive=uint32
+  //SigExp=uint32
+  //SigInception=uint32
+  //keyTag=uint16
+  //signName=domain
+  //signature=string[256]
+  ;
+resourceRecordKEY:
+  type_=typeKEY
+  class_=uint16
+  timeToLive=uint32
+  dataLength=uint16
+  flags=uint16
+  protocol=uint8
+  algorithm=uint8
+  key=string[$dataLength.val - 4]
   ;
 resourceRecordNSEC3: // copied from Tom's SCL code, which he is unsure of
   type_=typeNSEC3
@@ -238,14 +271,17 @@ NULL_BYTE: '\u0000';
 REF_BYTE: '\u00c0';
 
 TYPE_A: '\u0001';
-TYPE_AAAA: '\u001c'; // 28
+TYPE_NS: '\u0002';
 TYPE_CNAME: '\u0005';
 TYPE_SOA: '\u0006';
+TYPE_PTR: '\u000c'; // 12
+TYPE_MX: '\u000f'; // 15
+TYPE_TXT: '\u0010'; // 16
+TYPE_AAAA: '\u001c'; // 28
 TYPE_OPT: '\u0029'; // 41
-TYPE_NS: '\u0002';
-TYPE_KEY: '\u0030'; // 48
-TYPE_RRSIG: '\u002e'; // 46
 TYPE_DS: '\u002b'; // 43
+TYPE_RRSIG: '\u002e'; // 46
+TYPE_KEY: '\u0030'; // 48
 TYPE_NSEC3: '\u0032'; // 50
 
 BYTE: '\u0000'..'\u00FF';
