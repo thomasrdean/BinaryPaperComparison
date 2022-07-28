@@ -5,6 +5,10 @@ actually, the jar is in here and the zip of the runtime is in here too (for vers
 do
 `rm -r antlr4cpp`
 `unzip antlr4-cpp-runtime-4.10.1-source.zip -d antlr4cpp`
+`cd antlr4cpp`
+`cmake -DCMAKE_BUILD_TYPE=Debug .`
+`make`
+`cd ..`
 `cd binary/build`
 `cmake -DCMAKE_BUILD_TYPE=Debug ..`
 `make`
