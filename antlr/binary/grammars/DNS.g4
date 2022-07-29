@@ -54,14 +54,6 @@ rrBody
   | resourceRecordRRSIG
   | resourceRecordKEY
   | resourceRecordNSEC3
-//  | resourceRecordAll
-  ;
-resourceRecordAll:
-  type_=uint16 { fprintf(stderr, "type: %d\n", $type_.val); }
-  class_=uint16 { fprintf(stderr, "class: %d\n", $class_.val); }
-  timeToLive=uint32 { fprintf(stderr, "ttl: %d\n", $timeToLive.val); }
-  dataLength=uint16 { fprintf(stderr, "data length: %d\n", $dataLength.val); }
-  blob[$dataLength.val]
   ;
 resourceRecordA:
   type_=typeA
