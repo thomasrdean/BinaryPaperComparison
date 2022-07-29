@@ -25,7 +25,7 @@ locals [int i = 0]
 query:
   name=domain
   type_=uint16
-  class_=uint16 // change to "class"?
+  class=uint16
   ;
 
 sequenceOfResourceRecord [int n]
@@ -54,28 +54,28 @@ rrBody
   ;
 resourceRecordA:
   type_=typeA
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   address=ipv4Address
   ;
 resourceRecordNS:
   type_=typeNS
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   nameServer=domain
   ;
 resourceRecordCNAME:
   type_=typeCNAME
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   cname=domain
   ;
 resourceRecordSOA:
   type_=typeSOA
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   primaryNameServer=domain
@@ -88,14 +88,14 @@ resourceRecordSOA:
   ;
 resourceRecordPTR:
   type_=typePTR
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   domainName=domain
   ;
 resourceRecordMX:
   type_=typeMX
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   preference=uint16
@@ -103,14 +103,14 @@ resourceRecordMX:
   ;
 resourceRecordTXT:
   type_=typeTXT
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   text=string[$dataLength.val]
   ;
 resourceRecordAAAA:
   type_=typeAAAA
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   address=ipv6Address
@@ -126,7 +126,7 @@ resourceRecordOPT:
   ;
 resourceRecordDS:
   type_=typeDS
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   keyid=uint16
@@ -136,7 +136,7 @@ resourceRecordDS:
   ;
 resourceRecordRRSIG:
   type_=typeRRSIG
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   {fprintf(stderr, "AAAAA\n");}
@@ -152,7 +152,7 @@ resourceRecordRRSIG:
   ;
 resourceRecordKEY:
   type_=typeKEY
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   flags=uint16
@@ -162,7 +162,7 @@ resourceRecordKEY:
   ;
 resourceRecordNSEC3: // copied from Tom's SCL code, which he is unsure of
   type_=typeNSEC3
-  class_=uint16
+  class=uint16
   timeToLive=uint32
   dataLength=uint16
   alg=uint8
