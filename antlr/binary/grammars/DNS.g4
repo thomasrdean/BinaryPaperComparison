@@ -1,8 +1,5 @@
 grammar DNS;
 
-// This grammar is really fast: "real    0m12.463s"
-// "DNS Packets Parsed: 493" "Total Packets: 509"
-
 dns:
   transactionId=uint16
   flags=uint16
@@ -151,8 +148,6 @@ resourceRecordRRSIG:
   SigInception=uint32
   keyTag=uint16
   signName=domain
-//  { fprintf(stderr, "blart4 %d", _ctx.children[11].start->getStartIndex()); }
-//  signature=string[$dataLength.val - ($typeCov.start->getStartIndex())]
   signature=string[$dataLength.val - ($signName.stop->getStopIndex() + 1 - $typeCov.start->getStartIndex())]
   ;
 resourceRecordKEY:
