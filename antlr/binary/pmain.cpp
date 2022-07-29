@@ -141,6 +141,7 @@ int main(int argc, char * argv[]){
     const unsigned char *packet; // The packet data
 	
     while ((packet = pcap_next(pcapHandle,&head)) != NULL) {
+        fprintf(stderr, "parsing packet number: %llu\n", pduCount);
 	if ((pduCount % 100000) == 0) {
 	    updateProgress(&pduCount);
 	}

@@ -41,19 +41,28 @@ resourceRecord:
   body=rrBody
   ;
 rrBody
-  : resourceRecordA
-  | resourceRecordNS
-  | resourceRecordCNAME
-  | resourceRecordSOA
-  | resourceRecordPTR
-  | resourceRecordMX
-  | resourceRecordTXT
-  | resourceRecordAAAA
-  | resourceRecordOPT
-  | resourceRecordDS
-  | resourceRecordRRSIG
-  | resourceRecordKEY
-  | resourceRecordNSEC3
+  : resourceRecordAll
+//  : resourceRecordA
+//  | resourceRecordNS
+//  | resourceRecordCNAME
+//  | resourceRecordSOA
+//  | resourceRecordPTR
+//  | resourceRecordMX
+//  | resourceRecordTXT
+//  | resourceRecordAAAA
+//  | resourceRecordOPT
+//  | resourceRecordDS
+//  | resourceRecordRRSIG
+//  | resourceRecordKEY
+//  | resourceRecordNSEC3
+//  | resourceRecordAll
+  ;
+resourceRecordAll:
+  type_=uint16 { fprintf(stderr, "type: %d\n", $type_.val); }
+  class_=uint16 { fprintf(stderr, "class: %d\n", $class_.val); }
+  timeToLive=uint32 { fprintf(stderr, "ttl: %d\n", $timeToLive.val); }
+  dataLength=uint16 { fprintf(stderr, "data length: %d\n", $dataLength.val); }
+  blob[$dataLength.val]
   ;
 resourceRecordA:
   type_=typeA
@@ -90,14 +99,14 @@ resourceRecordSOA:
   minimumTTL=uint32
   ;
 resourceRecordPTR:
-  type_=typeNS
+  type_=typePTR
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
   domainName=domain
   ;
 resourceRecordMX:
-  type_=typeNS
+  type_=typeMX
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
@@ -105,7 +114,7 @@ resourceRecordMX:
   mailExchange=domain
   ;
 resourceRecordTXT:
-  type_=typeNS
+  type_=typeTXT
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
@@ -142,16 +151,16 @@ resourceRecordRRSIG:
   class_=uint16
   timeToLive=uint32
   dataLength=uint16
-  data=string[$dataLength.val]
-  //typeCov=uint16
-  //alg=uint8
-  //labels=uint8
-  //OrigtimeToLive=uint32
-  //SigExp=uint32
-  //SigInception=uint32
-  //keyTag=uint16
-  //signName=domain
-  //signature=string[256]
+  {fprintf(stderr, "AAAAA\n");}
+  typeCov=uint16
+  alg=uint8
+  labels=uint8
+  OrigtimeToLive=uint32
+  SigExp=uint32
+  SigInception=uint32
+  keyTag=uint16
+  signName=domain
+  signature=string[256]
   ;
 resourceRecordKEY:
   type_=typeKEY
@@ -232,14 +241,17 @@ refByte: REF_BYTE {fprintf(stderr, "eating: ref marker\n");} ;
 
 // Note that we can use '\u0000' safely (without screwing up the byte rule because it acts as an alias for BYTE
 typeA: '\u0000' data=TYPE_A {fprintf(stderr, "eating: type A\n");} ;
-typeAAAA: '\u0000' data=TYPE_AAAA {fprintf(stderr, "eating: type AAAA\n");} ;
+typeNS: '\u0000' data=TYPE_NS {fprintf(stderr, "eating: type NS\n");} ;
 typeCNAME: '\u0000' data=TYPE_CNAME {fprintf(stderr, "eating: type CNAME\n");} ;
 typeSOA: '\u0000' data=TYPE_SOA {fprintf(stderr, "eating: type SOA\n");} ;
+typePTR: '\u0000' data=TYPE_PTR {fprintf(stderr, "eating: type PTR\n");} ;
+typeMX: '\u0000' data=TYPE_MX {fprintf(stderr, "eating: type MX\n");} ;
+typeTXT: '\u0000' data=TYPE_TXT {fprintf(stderr, "eating: type TXT\n");} ;
+typeAAAA: '\u0000' data=TYPE_AAAA {fprintf(stderr, "eating: type AAAA\n");} ;
 typeOPT: '\u0000' data=TYPE_OPT {fprintf(stderr, "eating: type OPT\n");} ;
-typeNS: '\u0000' data=TYPE_NS {fprintf(stderr, "eating: type NS\n");} ;
-typeKEY: '\u0000' data=TYPE_KEY {fprintf(stderr, "eating: type KEY\n");} ;
+typeDS: '\u0000' data=TYPE_DS {fprintf(stderr, "eating: type DS\n");} ;
 typeRRSIG: '\u0000' data=TYPE_RRSIG {fprintf(stderr, "eating: type RRSIG\n");} ;
-typeDS: '\u0000' data=TYPE_DS {fprintf(stderr, "eating: type DS");} ;
+typeKEY: '\u0000' data=TYPE_KEY {fprintf(stderr, "eating: type KEY\n");} ;
 typeNSEC3: '\u0000' data=TYPE_NSEC3 {fprintf(stderr, "eating: type NSEC3\n");} ;
 
 byte returns [int val]
@@ -254,21 +266,24 @@ allTerminals
   | REF_BYTE
 
   | TYPE_A
-  | TYPE_AAAA
+  | TYPE_NS
   | TYPE_CNAME
   | TYPE_SOA
+  | TYPE_PTR
+  | TYPE_MX
+  | TYPE_TXT
+  | TYPE_AAAA
   | TYPE_OPT
-  | TYPE_NS
-  | TYPE_KEY
-  | TYPE_RRSIG
   | TYPE_DS
+  | TYPE_RRSIG
+  | TYPE_KEY
   | TYPE_NSEC3
 
   | BYTE
   ;
 
 NULL_BYTE: '\u0000';
-REF_BYTE: '\u00c0';
+REF_BYTE: '\u00c0'..'\u00c1';
 
 TYPE_A: '\u0001';
 TYPE_NS: '\u0002';
@@ -284,4 +299,4 @@ TYPE_RRSIG: '\u002e'; // 46
 TYPE_KEY: '\u0030'; // 48
 TYPE_NSEC3: '\u0032'; // 50
 
-BYTE: '\u0000'..'\u00FF';
+BYTE: '\u0000'..'\u00ff';
