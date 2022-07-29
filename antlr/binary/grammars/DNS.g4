@@ -41,20 +41,19 @@ resourceRecord:
   body=rrBody
   ;
 rrBody
-  : resourceRecordAll
-//  : resourceRecordA
-//  | resourceRecordNS
-//  | resourceRecordCNAME
-//  | resourceRecordSOA
-//  | resourceRecordPTR
-//  | resourceRecordMX
-//  | resourceRecordTXT
-//  | resourceRecordAAAA
-//  | resourceRecordOPT
-//  | resourceRecordDS
-//  | resourceRecordRRSIG
-//  | resourceRecordKEY
-//  | resourceRecordNSEC3
+  : resourceRecordA
+  | resourceRecordNS
+  | resourceRecordCNAME
+  | resourceRecordSOA
+  | resourceRecordPTR
+  | resourceRecordMX
+  | resourceRecordTXT
+  | resourceRecordAAAA
+  | resourceRecordOPT
+  | resourceRecordDS
+  | resourceRecordRRSIG
+  | resourceRecordKEY
+  | resourceRecordNSEC3
 //  | resourceRecordAll
   ;
 resourceRecordAll:
@@ -160,7 +159,9 @@ resourceRecordRRSIG:
   SigInception=uint32
   keyTag=uint16
   signName=domain
-  signature=string[256]
+//  { fprintf(stderr, "blart4 %d", _ctx.children[11].start->getStartIndex()); }
+//  signature=string[$dataLength.val - ($typeCov.start->getStartIndex())]
+  signature=string[$dataLength.val - ($signName.stop->getStopIndex() + 1 - $typeCov.start->getStartIndex())]
   ;
 resourceRecordKEY:
   type_=typeKEY
