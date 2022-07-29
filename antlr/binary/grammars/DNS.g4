@@ -254,7 +254,7 @@ typeRRSIG: '\u0000' data=TYPE_RRSIG {fprintf(stderr, "eating: type RRSIG\n");} ;
 typeKEY: '\u0000' data=TYPE_KEY {fprintf(stderr, "eating: type KEY\n");} ;
 typeNSEC3: '\u0000' data=TYPE_NSEC3 {fprintf(stderr, "eating: type NSEC3\n");} ;
 
-byte returns [int val]
+byte returns [uint8_t val]
   : data=allTerminals
   {
 $val = $data.text[0];
