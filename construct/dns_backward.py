@@ -176,8 +176,9 @@ rrNSEC3 = Struct( # copied from Tom's SCL code, which he is unsure of
   "flags" / Int8ub,
   "iterations" / Int16ub,
   "saltLength" / Int8ub,
-  "hashlength" / Int8ub,
-  "nexthash" / Byte[this.hashlength],
+  "salt" / Byte[this.saltLength],
+  "hashLength" / Int8ub,
+  "nextHash" / Byte[this.hashLength],
   "typeMap" / map_,
 )
 
