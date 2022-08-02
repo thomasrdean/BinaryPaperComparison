@@ -146,8 +146,9 @@ typedef struct { // copied from Tom's SCL code, which he is unsure of
   uint8 flags;
   uint16 iterations;
   uint8 saltLength;
-  uint8 hashlength;
-  char nexthash[hashlength];
+  char salt[saltLength];
+  uint8 hashLength;
+  char nextHash[hashLength];
   Map typeMap;
 } RRBodyNSEC3;
 
