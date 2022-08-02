@@ -169,8 +169,9 @@ resourceRecordNSEC3: // copied from Tom's SCL code, which he is unsure of
   flags=uint8
   iterations=uint16
   saltLength=uint8
-  hashlength=uint8
-  nexthash=string[$hashlength.val]
+  salt=string[$saltLength.val]
+  hashLength=uint8
+  nextHash=string[$hashLength.val]
   typeMap=map_
   ;
 
