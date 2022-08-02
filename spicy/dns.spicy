@@ -178,8 +178,9 @@ type RRBodyNSEC3 = unit() { # copied from Tom's SCL code, which he is unsure of
     flags: uint8;
     iterations: uint16;
     saltLength: uint8;
-    hashlength: uint8;
-    nexthash: bytes &size=self.hashlength;
+    salt: bytes &size=self.saltLength;
+    hashLength: uint8;
+    nexthash: bytes &size=self.hashLength;
     typeMap: Map;
 };
 type Map = unit() {
