@@ -134,8 +134,6 @@ class DnsPacket(KaitaiStruct):
                 self.body = DnsPacket.RrBodyAaaa(self._io, self, self._root)
             elif _on == DnsPacket.RrType.soa:
                 self.body = DnsPacket.RrBodySoa(self._io, self, self._root)
-            else:
-                self.body = DnsPacket.Unknown(self._io, self, self._root)
 
 
     class RrBodyMx(KaitaiStruct):
@@ -228,7 +226,7 @@ class DnsPacket(KaitaiStruct):
             self.query_class = self._io.read_u2be()
 
 
-    class Unknown(KaitaiStruct):
+    class RrBodyRrsigHelper(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
@@ -236,10 +234,15 @@ class DnsPacket(KaitaiStruct):
             self._read()
 
         def _read(self):
-            self.class_ = self._io.read_u2be()
-            self.time_to_live = self._io.read_u4be()
-            self.data_length = self._io.read_u2be()
-            self.data = self._io.read_bytes(self.data_length)
+            self.type_cov = self._io.read_u2be()
+            self.alg = self._io.read_u1()
+            self.labels = self._io.read_u1()
+            self.orig_time_to_live = self._io.read_u4be()
+            self.sig_exp = self._io.read_u4be()
+            self.sig_inception = self._io.read_u4be()
+            self.key_tag = self._io.read_u2be()
+            self.sign_name = DnsPacket.Domain(self._io, self, self._root)
+            self.signature = self._io.read_bytes_full()
 
 
     class RrBodyRrsig(KaitaiStruct):
@@ -253,7 +256,9 @@ class DnsPacket(KaitaiStruct):
             self.class_ = self._io.read_u2be()
             self.time_to_live = self._io.read_u4be()
             self.data_length = self._io.read_u2be()
-            self.data = self._io.read_bytes(self.data_length)
+            self._raw_data = self._io.read_bytes(self.data_length)
+            _io__raw_data = KaitaiStream(BytesIO(self._raw_data))
+            self.data = DnsPacket.RrBodyRrsigHelper(_io__raw_data, self, self._root)
 
 
     class Ipv4Address(KaitaiStruct):
@@ -341,6 +346,7 @@ class DnsPacket(KaitaiStruct):
             self.flags = self._io.read_u1()
             self.iterations = self._io.read_u2be()
             self.salt_length = self._io.read_u1()
+            self.salt = self._io.read_bytes(self.salt_length)
             self.hash_length = self._io.read_u1()
             self.next_hash = self._io.read_bytes(self.hash_length)
             self.type_map = DnsPacket.Map(self._io, self, self._root)

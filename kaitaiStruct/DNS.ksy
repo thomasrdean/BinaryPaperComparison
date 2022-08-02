@@ -256,6 +256,8 @@ types:
         type: u2
       - id: salt_length
         type: u1
+      - id: salt
+        size: salt_length
       - id: hash_length
         type: u1
       - id: next_hash
