@@ -165,7 +165,7 @@ rrKEY = Struct(
   "algorithm" / Int8ub,
   "key" / Byte[this.dataLength - 4],
 )
-rrNSEC3 = Struct( # copied from Tom's SCL code, which he is unsure of
+rrNSEC3 = Struct(
   "name" / domain,
   "type" / Int16ub,
   Check(this.type == 0x32), # 50

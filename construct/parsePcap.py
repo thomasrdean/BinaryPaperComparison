@@ -1,7 +1,7 @@
 import sys
 import dpkt
 
-from ip_stack_construct import dns as dns_format
+from dns import dns as dns_format
 
 if len(sys.argv) != 2:
   print("Please provide one arg (a pcap file).")
