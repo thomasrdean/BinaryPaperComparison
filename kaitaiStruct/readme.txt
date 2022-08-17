@@ -1,8 +1,9 @@
 Install KaitaiStruct:
 http://kaitai.io/#download
+`sudo dpkg --install kaitai-struct-compiler_0.9_all.deb`
 
 Compile the Kaitai Struct code into python:
-`kaitai-struct-compiler DNS.ksy -t python`
+`make`
 
 Optional, create and activate a python virtual environment:
 `python3 -m venv venv && source venv/bin/activate`
