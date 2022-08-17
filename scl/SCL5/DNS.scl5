@@ -272,8 +272,7 @@ DNS DEFINITIONS ::= BEGIN
                 flags           INTEGER (SIZE 1 BYTES),
                 iterations      INTEGER (SIZE 2 BYTES),
                 saltLength      INTEGER (SIZE 1 BYTES),
-                -- salt         ???
-                hashlength      INTEGER (SIZE 1 BYTES),
+                hashLength      INTEGER (SIZE 1 BYTES),
                 nexthash        OCTET STRING (SIZE CONSTRAINED),
                 typeMap         Map (SIZE DEFINED)
                 -- this really has to be a set of, with a length
@@ -282,7 +281,7 @@ DNS DEFINITIONS ::= BEGIN
         }
         <transfer>
                 Back { type == 50 }
-                Forward  { LENGTH(nexthash) == hashlength }
+                Forward  { LENGTH(nexthash) == hashLength }
         </transfer>
 
 	Map ::= SEQUENCE {
