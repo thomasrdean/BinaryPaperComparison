@@ -36,11 +36,9 @@ for pcap_element in pcap_elements:
       num_skipped += 1
       continue
     dns_bin = pcap_element_to_dns(pcap_element)
-    run_result = subprocess.run(["spicy-driver", "dns.hlto"], stdout=subprocess.PIPE, input=dns_bin)
+    run_result = subprocess.run(["/opt/spicy/bin/spicy-driver", "dns.hlto"], stdout=subprocess.PIPE, input=dns_bin)
     result = run_result.stdout.decode('ascii')
     assert run_result.returncode == 0
-    if result != "":
-      print("result:", result)
     num_parsed += 1
   except Exception as e:
     print(e)
