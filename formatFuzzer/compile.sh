@@ -12,7 +12,7 @@ rm "${base_file}" "${cpp_file}" "${obj_file}" "${generated_file}" "${generated_f
 
 echo "Compiling:"
 orig_dir=$(pwd)
-ff_dir="${orig_dir}/FormatFuzzer"
+ff_dir="${orig_dir}/FormatFuzzer-master"
 cd "${ff_dir}"
 ./ffcompile "${orig_dir}/${template_file}" "${cpp_file}"
 g++ -c -I . -std=c++17 -g -O3 -Wall fuzzer.cpp
