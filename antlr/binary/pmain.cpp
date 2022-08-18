@@ -212,6 +212,10 @@ int main(int argc, char * argv[]){
 		    if (traceFileParser) fprintf(traceFileParser,"\tFAILED\n");
 		    ++pduFailed;
 		}
+        delete bytesFromPacket;
+        delete dnsLexer;
+        delete dnsTokens;
+        delete dnsParser;
         // ***********************************
 
 	    } else {
@@ -262,6 +266,10 @@ int main(int argc, char * argv[]){
 		    if (traceFileParser) fprintf(traceFileParser,"\tFAILED\n");
 		    ++pduFailed;
 		}
+        delete bytesFromPacket;
+        delete dnsLexer;
+        delete dnsTokens;
+        delete dnsParser;
         // ***********************************
 	    } else {
 	        // ******** OTHER (e.g. TCP) **********************
