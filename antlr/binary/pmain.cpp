@@ -95,7 +95,7 @@ class BinaryErrorListener : public antlr4::BaseErrorListener {
 
 void BinaryErrorListener::syntaxError(antlr4::Recognizer *recognizer, antlr4::Token *offendingSymbol, size_t line,
 size_t charPositionInLine, const std::string &msg, std::exception_ptr e) {
-  fprintf(stderr, "crap\n");
+  fprintf(stderr, "Error!\n");
 }
 
 int main(int argc, char * argv[]){
