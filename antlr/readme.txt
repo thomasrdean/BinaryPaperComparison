@@ -1,15 +1,10 @@
-you need to get the antlr jar and the antlr c++ runtime, then unpack the runtime
-
-actually, the jar is in here and the zip of the runtime is in here too (for versioning or whatever)
-
-do
-`rm -r antlr4cpp`
-`unzip antlr4-cpp-runtime-4.10.1-source.zip -d antlr4cpp`
-`cd antlr4cpp`
-`cmake -DCMAKE_BUILD_TYPE=Debug .`
-`make`
-`cd ..`
-`cd binary/build`
-`cmake -DCMAKE_BUILD_TYPE=Debug ..`
-`make`
+Install dependencies and compile:
+`./compile.sh`
+Run the parser:
 `./parser <pcap>`
+
+
+Or, with docker:
+(Make sure the workspace is clean (no cmake cached files) before building a docker image!)
+`sudo docker build -t antlr_dns .`
+`sudo docker run -it -v ~/msc/DNSpcaps:/DNSpcaps antlr_dns /antlr/binary/build/parser /DNSpcaps/dns_all_rr_types_udp.pcap`
