@@ -12,9 +12,6 @@ dns:
   authority=sequenceOfResourceRecord[$numAuthority.val]
   additional=sequenceOfResourceRecord[$numAdditional.val]
   EOF
-  {
-fprintf(stderr, "Successfully Parsed DNS Packet!!!\n");
-  }
   ;
 
 sequenceOfQuery [int n]
@@ -139,7 +136,6 @@ resourceRecordRRSIG:
   class=uint16
   timeToLive=uint32
   dataLength=uint16
-  {fprintf(stderr, "AAAAA\n");}
   typeCov=uint16
   alg=uint8
   labels=uint8
@@ -225,29 +221,28 @@ uint32 returns [uint32_t val]:
   {$val = $b0.val << 24 | $b1.val << 16 | $b2.val << 8 | $b3.val;}
   ;
 
-nullByte: NULL_BYTE {fprintf(stderr, "eating: null byte\n");} ;
-refByte: REF_BYTE {fprintf(stderr, "eating: ref marker\n");} ;
+nullByte: NULL_BYTE;
+refByte: REF_BYTE;
 
 // Note that we can use '\u0000' safely (without screwing up the byte rule because it acts as an alias for BYTE
-typeA: '\u0000' data=TYPE_A {fprintf(stderr, "eating: type A\n");} ;
-typeNS: '\u0000' data=TYPE_NS {fprintf(stderr, "eating: type NS\n");} ;
-typeCNAME: '\u0000' data=TYPE_CNAME {fprintf(stderr, "eating: type CNAME\n");} ;
-typeSOA: '\u0000' data=TYPE_SOA {fprintf(stderr, "eating: type SOA\n");} ;
-typePTR: '\u0000' data=TYPE_PTR {fprintf(stderr, "eating: type PTR\n");} ;
-typeMX: '\u0000' data=TYPE_MX {fprintf(stderr, "eating: type MX\n");} ;
-typeTXT: '\u0000' data=TYPE_TXT {fprintf(stderr, "eating: type TXT\n");} ;
-typeAAAA: '\u0000' data=TYPE_AAAA {fprintf(stderr, "eating: type AAAA\n");} ;
-typeOPT: '\u0000' data=TYPE_OPT {fprintf(stderr, "eating: type OPT\n");} ;
-typeDS: '\u0000' data=TYPE_DS {fprintf(stderr, "eating: type DS\n");} ;
-typeRRSIG: '\u0000' data=TYPE_RRSIG {fprintf(stderr, "eating: type RRSIG\n");} ;
-typeKEY: '\u0000' data=TYPE_KEY {fprintf(stderr, "eating: type KEY\n");} ;
-typeNSEC3: '\u0000' data=TYPE_NSEC3 {fprintf(stderr, "eating: type NSEC3\n");} ;
+typeA: '\u0000' data=TYPE_A;
+typeNS: '\u0000' data=TYPE_NS;
+typeCNAME: '\u0000' data=TYPE_CNAME;
+typeSOA: '\u0000' data=TYPE_SOA;
+typePTR: '\u0000' data=TYPE_PTR;
+typeMX: '\u0000' data=TYPE_MX;
+typeTXT: '\u0000' data=TYPE_TXT;
+typeAAAA: '\u0000' data=TYPE_AAAA;
+typeOPT: '\u0000' data=TYPE_OPT;
+typeDS: '\u0000' data=TYPE_DS;
+typeRRSIG: '\u0000' data=TYPE_RRSIG;
+typeKEY: '\u0000' data=TYPE_KEY;
+typeNSEC3: '\u0000' data=TYPE_NSEC3;
 
 byte returns [uint8_t val]
   : data=allTerminals
   {
 $val = $data.text[0];
-fprintf(stderr, "eating: %x\n", $val);
   };
 
 allTerminals
