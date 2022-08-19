@@ -16,4 +16,4 @@ Run the parser:
 
 Or, with docker:
 `sudo docker build -t spicy_dns .`
-`sudo docker run -it -v ~/msc/DNSpcaps:/DNSpcaps spicy_dns python3 /spicy/parsePcap.py /DNSpcaps/dns_all_rr_types_udp.pcap`
+`sudo docker run -it -v $(readlink -f ../dns_pcaps):/dns_pcaps spicy_dns python3 /spicy/parsePcap.py /dns_pcaps/dns_all_rr_types_udp.pcap`

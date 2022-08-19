@@ -17,4 +17,4 @@ Run the parser:
 
 Or, with docker:
 `sudo docker build -t kaitai_struct_dns .`
-`sudo docker run -it -v ~/msc/DNSpcaps:/DNSpcaps kaitai_struct_dns python3 /kaitai_struct/parsePcap.py /DNSpcaps/dns_all_rr_types_udp.pcap`
+`sudo docker run -it -v $(readlink -f ../dns_pcaps):/dns_pcaps kaitai_struct_dns python3 /kaitai_struct/parsePcap.py /dns_pcaps/dns_all_rr_types_udp.pcap`

@@ -13,4 +13,4 @@ Run the parser:
 
 Or, with docker:
 `sudo docker build -t scl_dns .`
-`sudo docker run -it -v ~/msc/DNSpcaps:/DNSpcaps scl_dns /scl/BUILD/bin/pcapparse /DNSpcaps/dns_all_rr_types_udp.pcap`
+`sudo docker run -it -v $(readlink -f ../dns_pcaps):/dns_pcaps scl_dns /scl/BUILD/bin/pcapparse /dns_pcaps/dns_all_rr_types_udp.pcap`

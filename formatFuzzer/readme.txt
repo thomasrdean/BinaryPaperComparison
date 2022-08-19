@@ -15,4 +15,4 @@ Run the parser:
 
 Or, with docker:
 `sudo docker build -t formatfuzzer_dns .`
-`sudo docker run -it -v ~/msc/DNSpcaps:/DNSpcaps formatfuzzer_dns python3 /formatFuzzer/parsePcap.py /DNSpcaps/dns_all_rr_types_udp.pcap`
+`sudo docker run -it -v $(readlink -f ../dns_pcaps):/dns_pcaps formatfuzzer_dns python3 /formatFuzzer/parsePcap.py /dns_pcaps/dns_all_rr_types_udp.pcap`
