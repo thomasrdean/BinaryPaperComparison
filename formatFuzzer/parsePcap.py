@@ -38,7 +38,7 @@ for pcap_element in pcap_elements:
     run_result = subprocess.run(["./dns", "parse", "tmp"], stdout=subprocess.PIPE)
     result = run_result.stdout.decode('ascii')
     assert run_result.returncode == 0
-    print("result:", result)
+#    print("result:", result)
     num_parsed += 1
 
 #    print(parsed_packet)
