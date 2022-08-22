@@ -9,5 +9,5 @@ Run the parser:
 
 
 Or, with docker:
-`docker build -t construct_dns .`
+`sudo docker build -t construct_dns .`
 `sudo docker run -it -v $(readlink -f ../dns_pcaps):/dns_pcaps construct_dns python3 /construct/parsePcap.py /dns_pcaps/dns_all_rr_types_udp.pcap`
