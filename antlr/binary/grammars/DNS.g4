@@ -156,7 +156,7 @@ resourceRecordKEY:
   algorithm=uint8
   key=string[$dataLength.val - 4]
   ;
-resourceRecordNSEC3: // copied from Tom's SCL code, which he is unsure of
+resourceRecordNSEC3:
   type_=typeNSEC3
   class=uint16
   timeToLive=uint32

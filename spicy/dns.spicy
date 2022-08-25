@@ -31,10 +31,6 @@ type Query = unit {
 type ResourceRecord = unit() {
     name:   Domain;
     type_:  uint16 &convert=RRType($$);
-#    class:  uint16;
-#    ttl:    uint32;
-#    dataLength:  uint16;
-
     switch ( self.type_ ) {
         RRType::A    -> bodyA: RRBodyA;
         RRType::NS   -> bodyNS: RRBodyNS;
@@ -66,7 +62,6 @@ type RRType = enum {
     KEY = 48,
     SIG = 46,
     NSEC3 = 50,
-
 };
 
 type RRBodyA = unit() {
@@ -170,7 +165,7 @@ type RRBodyKEY = unit() {
     algorithm: uint8;
     key: bytes &size=self.dataLength - 4;
 };
-type RRBodyNSEC3 = unit() { # copied from Tom's SCL code, which he is unsure of
+type RRBodyNSEC3 = unit() {
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
