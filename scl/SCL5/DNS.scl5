@@ -312,9 +312,8 @@ DNS DEFINITIONS ::= BEGIN
 	}
 	<transfer>
 		Forward { LENGTH(letters) == length }
-		-- Note: these constraints may be incomplete, but they seem to work well
 		Back { length != 0 }
-		Back { length != 192 && length != 193 } -- 192 is c0
+		Back { length < 64 }
 	</transfer>
 
 	ReferenceWord ::= SEQUENCE {
@@ -322,7 +321,7 @@ DNS DEFINITIONS ::= BEGIN
 		reference INTEGER (SIZE 1 BYTES)
 	}
 	<transfer>
-		Back { header == 192 || header == 193 } -- 192 is c0 note c1 is also a reference word, different offset I guess. probably header> 192 is the real constraint
+		Back { header >= 192 } -- 192 is c0
 	</transfer>
 
 	NullWord ::= SEQUENCE {

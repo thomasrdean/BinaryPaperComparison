@@ -3,4 +3,4 @@ RUN apt update && apt install -y unzip build-essential cmake default-jre libpcap
 COPY . /antlr
 WORKDIR /antlr
 RUN ./compile.sh
-#RUN ./parser <pcap>
+#RUN ./binary/build/parser <pcap>

@@ -185,11 +185,11 @@ type Map = unit() {
 };
 
 type Domain = unit {
-    words: Word[] &until=($$.len == 0 || $$.len == 192 || $$.len == 193);
+    words: Word[] &until=($$.len == 0 || $$.len >= 192);
 };
 
 type Word = unit() {
-    len: uint8;
-    reference: uint8 if (self.len == 192 || self.len == 193);
-    letters: bytes &size=self.len if (self.len != 192 && self.len != 193);
+    len: uint8 &requires=($$ < 64 || $$ >= 192);
+    reference: uint8 if (self.len >= 192);
+    letters: bytes &size=self.len if (self.len < 64);
 };

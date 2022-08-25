@@ -287,12 +287,17 @@ types:
         if: "is_ref"
         type: u1
       - id: letters
-        if: "not is_ref"
+        if: "is_letters"
         type: str
         size: length
+      - id: check
+        type: fail
+        if: "not is_ref and not is_letters"
     instances:
       is_ref:
         value: length >= 192
+      is_letters:
+        value: length < 64
   ipv4_address:
     seq:
       - id: ip

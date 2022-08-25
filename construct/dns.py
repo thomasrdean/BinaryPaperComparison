@@ -7,9 +7,9 @@ word = Select(
         Check(this.first_byte >= 0xc0),
         "ref" / Int8ub,
     ),
-    # `Select` tries subcons in order, so `label` is only tried if `ref` fails
     "label" / Struct(
         "length" / Int8ub,
+        Check(this.length < 0x40),
         "letters" / Byte[this.length],
     ),
 )

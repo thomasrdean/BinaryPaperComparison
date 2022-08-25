@@ -1,7 +1,7 @@
 Install dependencies and compile:
 `./compile.sh`
 Run the parser:
-`./parser <pcap>`
+`./binary/build/parser <pcap>`
 
 
 Or, with docker:

@@ -5,10 +5,12 @@ typedef byte uint8;
 typedef struct {
   ubyte length;
   if(length != 0) {
-    if (length < (ubyte) 192) {
+    if(length < (ubyte) 64) {
       ubyte letters[length];
-    } else {
+    } else if (length >= (ubyte) 192) {
       ubyte reference;
+    } else {
+      Exit(1);
     }
   }
 } Word;

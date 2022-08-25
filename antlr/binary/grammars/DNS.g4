@@ -186,7 +186,7 @@ word
 returns [bool isTerminator = false]
   : nullByte {$isTerminator = true;}
   | refByte reference=byte {$isTerminator = true;}
-  | length=uint8 string[$length.val]
+  | length=letterLength string[$length.val]
   ;
 
 string [int n]
@@ -221,9 +221,6 @@ uint32 returns [uint32_t val]:
   {$val = $b0.val << 24 | $b1.val << 16 | $b2.val << 8 | $b3.val;}
   ;
 
-nullByte: NULL_BYTE;
-refByte: REF_BYTE;
-
 // Note that we can use '\u0000' safely (without screwing up the byte rule because it acts as an alias for BYTE
 typeA: '\u0000' data=TYPE_A;
 typeNS: '\u0000' data=TYPE_NS;
@@ -245,9 +242,33 @@ byte returns [uint8_t val]
 $val = $data.text[0];
   };
 
+// Writing both lexer and parser rules is necesary because tokens are classified without knowledge of the parsing context and there is overlap between parser rules (e.g. a nullByte is also a letterByte).
+nullByte: NULL_BYTE;
+letterLength returns [uint8_t val]
+  : data=letterByte
+  {
+$val = $data.text[0];
+  };
+letterByte:
+  LETTER_LENGTH_BYTE
+  | TYPE_A
+  | TYPE_NS
+  | TYPE_CNAME
+  | TYPE_SOA
+  | TYPE_PTR
+  | TYPE_MX
+  | TYPE_TXT
+  | TYPE_AAAA
+  | TYPE_OPT
+  | TYPE_DS
+  | TYPE_RRSIG
+  | TYPE_KEY
+  | TYPE_NSEC3
+  ;
+refByte: REF_BYTE;
+
 allTerminals
-  : NULL_BYTE 
-  | REF_BYTE
+  : NULL_BYTE
 
   | TYPE_A
   | TYPE_NS
@@ -263,11 +284,15 @@ allTerminals
   | TYPE_KEY
   | TYPE_NSEC3
 
+  | LETTER_LENGTH_BYTE
+  | REF_BYTE
+
   | BYTE
   ;
 
+// A byte is classified by considering each of the following lexer rules in order.
+// So, a byte will only be classified as a BYTE if it is not classified as any of the other tokens.
 NULL_BYTE: '\u0000';
-REF_BYTE: '\u00c0'..'\u00c1';
 
 TYPE_A: '\u0001';
 TYPE_NS: '\u0002';
@@ -282,5 +307,8 @@ TYPE_DS: '\u002b'; // 43
 TYPE_RRSIG: '\u002e'; // 46
 TYPE_KEY: '\u0030'; // 48
 TYPE_NSEC3: '\u0032'; // 50
+
+LETTER_LENGTH_BYTE: '\u0000' .. '\u0040';
+REF_BYTE: '\u00c0'..'\u00ff';
 
 BYTE: '\u0000'..'\u00ff';
