@@ -1,5 +1,3 @@
-// I have tested that this parses dns.pcap and that it doesn't parse dns.pcap if I change it.
-
 BigEndian();
 
 typedef byte uint8;
@@ -138,7 +136,7 @@ typedef struct {
   uint8 algorithm;
   char key[dataLength - 4];
 } RRBodyKEY;
-typedef struct { // copied from Tom's SCL code, which he is unsure of
+typedef struct {
   uint16 class_;
   uint32 timeToLive;
   uint16 dataLength;
