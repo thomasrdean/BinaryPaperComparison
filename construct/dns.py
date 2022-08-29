@@ -2,24 +2,24 @@ from construct import *
 from construct.lib import *
 
 word = Select(
-    "ref" / Struct(
-        "first_byte" / Int8ub,
-        Check(this.first_byte >= 0xc0),
-        "ref" / Int8ub,
-    ),
-    "label" / Struct(
-        "length" / Int8ub,
-        Check(this.length < 0x40),
-        "letters" / Byte[this.length],
-    ),
+  "ref" / Struct(
+    "first_byte" / Int8ub,
+    Check(this.first_byte >= 0xc0),
+    "ref" / Int8ub,
+  ),
+  "label" / Struct(
+    "length" / Int8ub,
+    Check(this.length < 0x40),
+    "letters" / Byte[this.length],
+  ),
 )
 
 domain = RepeatUntil(lambda x,lst,cts: hasattr(x, "ref") or x.length == 0, word)
 
 query_record = Struct(
-    "name" / domain,
-    "type" / Int16ub,
-    "class" / Int16ub,
+  "name" / domain,
+  "type" / Int16ub,
+  "class" / Int16ub,
 )
 
 ipv4Address = Byte[4]
@@ -183,31 +183,31 @@ rrNSEC3 = Struct(
 )
 
 resource_record = Select(
-    rrA,
-    rrNS,
-    rrCNAME,
-    rrSOA,
-    rrPTR,
-    rrMX,
-    rrTXT,
-    rrAAAA,
-    rrOPT,
-    rrDS,
-    rrKEY,
-    rrRRSIG,
-    rrNSEC3,
+  rrA,
+  rrNS,
+  rrCNAME,
+  rrSOA,
+  rrPTR,
+  rrMX,
+  rrTXT,
+  rrAAAA,
+  rrOPT,
+  rrDS,
+  rrKEY,
+  rrRRSIG,
+  rrNSEC3,
 )
 
 dns = Struct(
-    "id" / Int16ub,
-    "flags" / Int16ub,
-    "question_count" / Int16ub,
-    "answer_count" / Int16ub,
-    "authority_count" / Int16ub,
-    "additional_count" / Int16ub,
-    "questions" / query_record[this.question_count],
-    "answers" / resource_record[this.answer_count],
-    "authorities" / resource_record[this.authority_count],
-    "additionals" / resource_record[this.additional_count],
-    Terminated,
+  "id" / Int16ub,
+  "flags" / Int16ub,
+  "question_count" / Int16ub,
+  "answer_count" / Int16ub,
+  "authority_count" / Int16ub,
+  "additional_count" / Int16ub,
+  "questions" / query_record[this.question_count],
+  "answers" / resource_record[this.answer_count],
+  "authorities" / resource_record[this.authority_count],
+  "additionals" / resource_record[this.additional_count],
+  Terminated,
 )
