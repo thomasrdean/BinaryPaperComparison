@@ -194,7 +194,6 @@ int main(int argc, char * argv[]){
         DNS::DNSLexer *dnsLexer = new DNS::DNSLexer(bytesFromPacket);
         antlr4::CommonTokenStream *dnsTokens = new antlr4::CommonTokenStream(dnsLexer);
         DNS::DNSParser *dnsParser = new DNS::DNSParser(dnsTokens);
-        // TODO: I think this is a memory leak:
         BinaryErrorListener listener = BinaryErrorListener();
         dnsParser->addErrorListener(&listener);
         dnsParser->setErrorHandler(std::make_shared<BailErrorStrategy>());
@@ -216,6 +215,7 @@ int main(int argc, char * argv[]){
         delete dnsLexer;
         delete dnsTokens;
         delete dnsParser;
+        delete listener;
         // ***********************************
 
 	    } else {
@@ -248,7 +248,6 @@ int main(int argc, char * argv[]){
         DNS::DNSLexer *dnsLexer = new DNS::DNSLexer(bytesFromPacket);
         antlr4::CommonTokenStream *dnsTokens = new antlr4::CommonTokenStream(dnsLexer);
         DNS::DNSParser *dnsParser = new DNS::DNSParser(dnsTokens);
-        // TODO: I think this is a memory leak:
         BinaryErrorListener listener = BinaryErrorListener();
         dnsParser->addErrorListener(&listener);
         dnsParser->setErrorHandler(std::make_shared<BailErrorStrategy>());
@@ -270,6 +269,7 @@ int main(int argc, char * argv[]){
         delete dnsLexer;
         delete dnsTokens;
         delete dnsParser;
+        delete listener;
         // ***********************************
 	    } else {
 	        // ******** OTHER (e.g. TCP) **********************
