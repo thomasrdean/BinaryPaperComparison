@@ -30,7 +30,11 @@ locals [int i = 0]
     : ( {$i < $n}? resourceRecord {$i++;} ) * {$i == $n}?
     ;
 
-resourceRecord
+resourceRecord:
+  name=domain
+  body=rrBody
+  ;
+rrBody
   : resourceRecordA
   | resourceRecordNS
   | resourceRecordCNAME
@@ -46,7 +50,6 @@ resourceRecord
   | resourceRecordNSEC3
   ;
 resourceRecordA:
-  name=domain
   type_=typeA
   class=uint16
   timeToLive=uint32
@@ -54,7 +57,6 @@ resourceRecordA:
   address=ipv4Address
   ;
 resourceRecordNS:
-  name=domain
   type_=typeNS
   class=uint16
   timeToLive=uint32
@@ -62,7 +64,6 @@ resourceRecordNS:
   nameServer=domain
   ;
 resourceRecordCNAME:
-  name=domain
   type_=typeCNAME
   class=uint16
   timeToLive=uint32
@@ -70,7 +71,6 @@ resourceRecordCNAME:
   cname=domain
   ;
 resourceRecordSOA:
-  name=domain
   type_=typeSOA
   class=uint16
   timeToLive=uint32
@@ -84,7 +84,6 @@ resourceRecordSOA:
   minimumTTL=uint32
   ;
 resourceRecordPTR:
-  name=domain
   type_=typePTR
   class=uint16
   timeToLive=uint32
@@ -92,7 +91,6 @@ resourceRecordPTR:
   domainName=domain
   ;
 resourceRecordMX:
-  name=domain
   type_=typeMX
   class=uint16
   timeToLive=uint32
@@ -101,7 +99,6 @@ resourceRecordMX:
   mailExchange=domain
   ;
 resourceRecordTXT:
-  name=domain
   type_=typeTXT
   class=uint16
   timeToLive=uint32
@@ -109,7 +106,6 @@ resourceRecordTXT:
   text=string[$dataLength.val]
   ;
 resourceRecordAAAA:
-  name=domain
   type_=typeAAAA
   class=uint16
   timeToLive=uint32
@@ -117,7 +113,6 @@ resourceRecordAAAA:
   address=ipv6Address
   ;
 resourceRecordOPT:
-  name=domain
   type_=typeOPT
   udpPayloadSize=uint16
   extendedRCode=uint8
@@ -127,7 +122,6 @@ resourceRecordOPT:
   optRecords=string[$dataLength.val]
   ;
 resourceRecordDS:
-  name=domain
   type_=typeDS
   class=uint16
   timeToLive=uint32
@@ -138,7 +132,6 @@ resourceRecordDS:
   digest=string[32]
   ;
 resourceRecordRRSIG:
-  name=domain
   type_=typeRRSIG
   class=uint16
   timeToLive=uint32
@@ -154,7 +147,6 @@ resourceRecordRRSIG:
   signature=string[$dataLength.val - ($signName.stop->getStopIndex() + 1 - $typeCov.start->getStartIndex())]
   ;
 resourceRecordKEY:
-  name=domain
   type_=typeKEY
   class=uint16
   timeToLive=uint32
@@ -165,7 +157,6 @@ resourceRecordKEY:
   key=string[$dataLength.val - 4]
   ;
 resourceRecordNSEC3:
-  name=domain
   type_=typeNSEC3
   class=uint16
   timeToLive=uint32
