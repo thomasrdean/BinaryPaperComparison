@@ -7,14 +7,14 @@ dns:
   numAnswer=uint16
   numAuthority=uint16
   numAdditional=uint16
-  question=sequenceOfQuery[$numQuestion.val]
-  answer=sequenceOfResourceRecord[$numAnswer.val]
-  authority=sequenceOfResourceRecord[$numAuthority.val]
-  additional=sequenceOfResourceRecord[$numAdditional.val]
+  question=setOfQuery[$numQuestion.val]
+  answer=setOfResourceRecord[$numAnswer.val]
+  authority=setOfResourceRecord[$numAuthority.val]
+  additional=setOfResourceRecord[$numAdditional.val]
   EOF
   ;
 
-sequenceOfQuery [int n]
+setOfQuery [int n]
 locals [int i = 0]
     : ( {$i < $n}? query {$i++;} ) * {$i == $n}?
     ;
@@ -25,7 +25,7 @@ query:
   class=uint16
   ;
 
-sequenceOfResourceRecord [int n]
+setOfResourceRecord [int n]
 locals [int i = 0]
     : ( {$i < $n}? resourceRecord {$i++;} ) * {$i == $n}?
     ;
