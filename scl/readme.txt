@@ -1,3 +1,5 @@
+SCL uses TXL (https://www.txl.ca/) to transform SCL grammars into c code that is able to parse and serialize the protocol specified by the grammar.
+
 Install dependencies:
 `sudo apt install clang libpcap-dev`
 Install TXL:
