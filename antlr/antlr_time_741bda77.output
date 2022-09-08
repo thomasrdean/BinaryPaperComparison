@@ -1,0 +1,197 @@
+pcapFileName = ../dns_pcaps/dns_all_rr_types_udp.pcap
+No parser trace file name
+No constraint trace file name
+No app parser trace file name
+No app constraint trace file name
+No RDF file name
+No environment directory name
+record environment = 0
+deubg level = 0
+Total number of packets 202
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:46 mismatched input '
+                            ' expecting '\u0001'
+Error!
+line 1:35 mismatched input '' expecting '\u0001'
+Error!
+line 1:35 mismatched input '' expecting '\u0001'
+Error!
+line 1:35 mismatched input '' expecting '\u0001'
+Error!
+line 1:32 mismatched input '' expecting '\u0001'
+Error!
+line 1:43 mismatched input '
+                            ' expecting '\u0001'
+Error!
+line 1:28 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:20 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:20 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:19 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:64 mismatched input '2' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:53 mismatched input '' expecting '\u0001'
+Error!
+line 1:53 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:64 mismatched input '2' expecting '\u0001'
+Error!
+line 1:23 mismatched input '0' expecting '\u0001'
+Error!
+line 1:23 mismatched input '0' expecting '\u0001'
+Error!
+line 1:23 mismatched input '0' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:20 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:20 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:19 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:64 mismatched input '2' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:53 mismatched input '' expecting '\u0001'
+Error!
+line 1:53 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:20 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:20 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:19 mismatched input '' expecting '\u0001'
+Error!
+line 1:64 mismatched input '2' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:53 mismatched input '' expecting '\u0001'
+Error!
+line 1:53 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:20 mismatched input '0' expecting '\u0001'
+Error!
+line 1:20 mismatched input '' expecting '\u0001'
+Error!
+line 1:20 mismatched input '' expecting '\u0001'
+Error!
+line 1:19 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:20 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:20 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:31 mismatched input '' expecting '\u0001'
+Error!
+line 1:19 mismatched input '' expecting '\u0001'
+Error!
+line 1:64 mismatched input '2' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:40 mismatched input '' expecting '\u0001'
+Error!
+line 1:53 mismatched input '' expecting '\u0001'
+Error!
+line 1:53 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+line 1:54 mismatched input '' expecting '\u0001'
+Error!
+
+Packets Parsed: 114
+Packets Failed: 88
+Total Packets: 202
+Failure rate: 43.56%
+
+real    10m27.108s
+user    10m27.023s
+sys     0m0.012s

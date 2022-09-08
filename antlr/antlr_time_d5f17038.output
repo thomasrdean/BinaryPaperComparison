@@ -1,0 +1,18 @@
+pcapFileName = ../dns_pcaps/dns_all_rr_types_udp.pcap                                                                                       
+No parser trace file name                                                                                                                   
+No constraint trace file name                                                                                                               No app parser trace file name      
+No app constraint trace file name
+No RDF file name                   
+No environment directory name      
+record environment = 0             
+deubg level = 0                                                       
+Total number of packets 202
+
+Packets Parsed: 202
+Packets Failed: 0
+Total Packets: 202
+Failure rate: 0.00%
+
+real    0m2.135s                   
+user    0m2.123s                   
+sys     0m0.012s
