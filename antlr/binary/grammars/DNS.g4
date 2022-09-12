@@ -221,7 +221,7 @@ uint32 returns [uint32_t val]:
   {$val = $b0.val << 24 | $b1.val << 16 | $b2.val << 8 | $b3.val;}
   ;
 
-// Note that we can use '\u0000' safely (without screwing up the byte rule because it acts as an alias for BYTE
+// Note that we can use '\u0000' safely (without screwing up the byte rule because it acts as an alias for NULL_BYTE
 typeA: '\u0000' data=TYPE_A;
 typeNS: '\u0000' data=TYPE_NS;
 typeCNAME: '\u0000' data=TYPE_CNAME;
@@ -308,7 +308,7 @@ TYPE_RRSIG: '\u002e'; // 46
 TYPE_KEY: '\u0030'; // 48
 TYPE_NSEC3: '\u0032'; // 50
 
-LETTER_LENGTH_BYTE: '\u0000' .. '\u0040';
+LETTER_LENGTH_BYTE: '\u0001' .. '\u0040';
 REF_BYTE: '\u00c0'..'\u00ff';
 
 BYTE: '\u0000'..'\u00ff';
