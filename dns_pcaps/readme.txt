@@ -13,3 +13,5 @@ We were able to increase the coverage of the grammar by concatenating dns.cap wi
 We called the resulting packet dns_all_rr_types_udp.pcap.
 
 dns-zone-transfer-ixfr.pcapng (https://packetlife.net/media/captures/dns-zone-transfer-ixfr.cap) from https://packetlife.net/captures/protocol/dns/ contains a packet with 2 extra bytes, so it was used to test how parsers handle extra bytes at the end of a packet.
+
+dns_all_rr_types_udp_times100.pcap is dns_all_rr_types_udp.pcap concatenated 100 times, and was used to perform a rough performance benchmark between SCL and Construct.
