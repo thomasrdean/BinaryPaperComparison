@@ -196,7 +196,10 @@ int main(int argc, char * argv[]){
         DNS::DNSLexer *dnsLexer = new DNS::DNSLexer(bytesFromPacket);
         antlr4::CommonTokenStream *dnsTokens = new antlr4::CommonTokenStream(dnsLexer);
         DNS::DNSParser *dnsParser = new DNS::DNSParser(dnsTokens);
+        // dnsParser->getInterpreter<antlr4::atn::ParserATNSimulator>()->setPredictionMode(antlr4::atn::PredictionMode::LL_EXACT_AMBIG_DETECTION);
+        // dnsParser->setTrace(true);
         BinaryErrorListener listener = BinaryErrorListener();
+        // dnsParser->addErrorListener(new antlr4::DiagnosticErrorListener());
         dnsParser->addErrorListener(&listener);
         dnsParser->setErrorHandler(std::make_shared<BailErrorStrategy>());
 
@@ -249,8 +252,11 @@ int main(int argc, char * argv[]){
         DNS::DNSLexer *dnsLexer = new DNS::DNSLexer(bytesFromPacket);
         antlr4::CommonTokenStream *dnsTokens = new antlr4::CommonTokenStream(dnsLexer);
         DNS::DNSParser *dnsParser = new DNS::DNSParser(dnsTokens);
+        // dnsParser->getInterpreter<antlr4::atn::ParserATNSimulator>()->setPredictionMode(antlr4::atn::PredictionMode::LL_EXACT_AMBIG_DETECTION);
+        // dnsParser->setTrace(true);
         BinaryErrorListener listener = BinaryErrorListener();
         dnsParser->addErrorListener(&listener);
+        // dnsParser->addErrorListener(new antlr4::DiagnosticErrorListener());
         dnsParser->setErrorHandler(std::make_shared<BailErrorStrategy>());
 
         bytesFromPacket->load(reinterpret_cast<const char*>(pkt_ptr), data_len);
