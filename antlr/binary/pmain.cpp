@@ -80,6 +80,7 @@ class BailErrorStrategy : public antlr4::DefaultErrorStrategy {
   public:
     virtual void recover(antlr4::Parser *recognizer, std::exception_ptr e) override;
     virtual antlr4::Token* recoverInline(antlr4::Parser *recognizer) override;
+    virtual void sync(antlr4::Parser *recognizer) override;
 };
 void BailErrorStrategy::recover(antlr4::Parser *recognizer, std::exception_ptr e) {
   throw e;
@@ -87,6 +88,7 @@ void BailErrorStrategy::recover(antlr4::Parser *recognizer, std::exception_ptr e
 antlr4::Token* BailErrorStrategy::recoverInline(antlr4::Parser *recognizer) {
   throw antlr4::InputMismatchException(recognizer);
 }
+void BailErrorStrategy::sync(antlr4::Parser *recognizer) {}
 class BinaryErrorListener : public antlr4::BaseErrorListener {
   public:
     virtual void syntaxError(antlr4::Recognizer *recognizer, antlr4::Token *offendingSymbol, size_t line,
@@ -215,7 +217,6 @@ int main(int argc, char * argv[]){
         delete dnsLexer;
         delete dnsTokens;
         delete dnsParser;
-        delete listener;
         // ***********************************
 
 	    } else {
@@ -269,7 +270,6 @@ int main(int argc, char * argv[]){
         delete dnsLexer;
         delete dnsTokens;
         delete dnsParser;
-        delete listener;
         // ***********************************
 	    } else {
 	        // ******** OTHER (e.g. TCP) **********************
