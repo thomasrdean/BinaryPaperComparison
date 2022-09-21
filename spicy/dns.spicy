@@ -30,20 +30,21 @@ type Query = unit {
 
 type ResourceRecord = unit() {
     name:   Domain;
-    switch {
-        -> bodyA: RRBodyA;
-        -> bodyNS: RRBodyNS;
-        -> bodyCNAME: RRBodyCNAME;
-        -> bodySOA: RRBodySOA;
-        -> bodyPTR: RRBodyPTR;
-        -> bodyMX: RRBodyMX;
-        -> bodyTXT: RRBodyTXT;
-        -> bodyAAAA: RRBodyAAAA;
-        -> bodyOPT: RRBodyOPT;
-        -> bodyDS: RRBodyDS;
-        -> bodyKEY: RRBodyKEY;
-        -> bodyRRSIG: RRBodyRRSIG;
-        -> bodyNSEC3: RRBodyNSEC3;
+    type_:  uint16 &convert=RRType($$);
+    switch ( self.type_ ) {
+        RRType::A    -> bodyA: RRBodyA;
+        RRType::NS   -> bodyNS: RRBodyNS;
+        RRType::CNAME-> bodyCNAME: RRBodyCNAME;
+        RRType::SOA  -> bodySOA: RRBodySOA;
+        RRType::PTR  -> bodyPTR: RRBodyPTR;
+        RRType::MX   -> bodyMX: RRBodyMX;
+        RRType::TXT  -> bodyTXT: RRBodyTXT;
+        RRType::AAAA -> bodyAAAA: RRBodyAAAA;
+        RRType::OPT  -> bodyOPT: RRBodyOPT;
+        RRType::DS   -> bodyDS: RRBodyDS;
+        RRType::KEY  -> bodyKEY: RRBodyKEY;
+        RRType::SIG  -> bodyRRSIG: RRBodyRRSIG;
+        RRType::NSEC3 -> bodyNSEC3: RRBodyNSEC3;
     };
 };
 
@@ -58,34 +59,30 @@ type RRType = enum {
     AAAA = 28,
     OPT = 41,
     DS = 43,
-    SIG = 46,
     KEY = 48,
+    SIG = 46,
     NSEC3 = 50,
 };
 
 type RRBodyA = unit() {
-    type_: uint16(1);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
     address: addr &ipv4;
 };
 type RRBodyNS = unit() {
-    type_: uint16(2);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
     nameServer: Domain;
 };
 type RRBodyCNAME = unit() {
-    type_: uint16(5);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
     cname: Domain;
 };
 type RRBodySOA = unit() {
-    type_: uint16(6);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
@@ -98,14 +95,12 @@ type RRBodySOA = unit() {
     minimumTTL: uint32;
 };
 type RRBodyPTR = unit() {
-    type_: uint16(12);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
     domainName: Domain;
 };
 type RRBodyMX = unit() {
-    type_: uint16(15);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
@@ -113,21 +108,18 @@ type RRBodyMX = unit() {
     mailExchange: Domain;
 };
 type RRBodyTXT = unit() {
-    type_: uint16(16);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
     text: bytes &size=self.dataLength;
 };
 type RRBodyAAAA = unit() {
-    type_: uint16(28);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
     address: addr &ipv6;
 };
 type RRBodyOPT = unit() {
-    type_: uint16(41);
     udpPayloadSize: uint16;
     higherBitsInExtendedRcode: uint8;
     EDNS0Version: uint8;
@@ -139,7 +131,6 @@ type RRBodyOPT = unit() {
     optRecords: bytes &size=self.dataLength;
 };
 type RRBodyDS = unit() {
-    type_: uint16(43);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
@@ -149,7 +140,6 @@ type RRBodyDS = unit() {
     digest: bytes &size=32;
 };
 type RRBodyRRSIG = unit() {
-    type_: uint16(46);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
@@ -167,7 +157,6 @@ type RRBodyRRSigHelper = unit() {
     signature: bytes &eod;
 };
 type RRBodyKEY = unit() {
-    type_: uint16(48);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
@@ -177,7 +166,6 @@ type RRBodyKEY = unit() {
     key: bytes &size=self.dataLength - 4;
 };
 type RRBodyNSEC3 = unit() {
-    type_: uint16(50);
     class_: uint16;
     timeToLive: uint32;
     dataLength: uint16;
