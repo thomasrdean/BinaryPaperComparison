@@ -1,0 +1,207 @@
+# Copyright (c) 2021 by the Zeek Project. See LICENSE for details.
+
+module DNS;
+
+import spicy;
+
+public type PDU = unit {
+    transactionId    : uint16;
+    flags : bytes &size=2;
+
+    numQuestion: uint16;
+    numAnswer: uint16;
+    numAuthority: uint16;
+    numAdditional: uint16;
+
+    question:   Query[self.numQuestion];
+    answer:     ResourceRecord[self.numAnswer];
+    authority:  ResourceRecord[self.numAuthority];
+    additional: ResourceRecord[self.numAdditional];
+    
+    extraBytes: bytes &eod;
+    on %done { print self; }
+} &requires = |self.extraBytes| == 0;
+
+type Query = unit {
+    name:  Domain;
+    type_:  uint16;
+    class: uint16;
+};
+
+type ResourceRecord = unit() {
+    name:   Domain;
+    switch {
+        -> bodyA: RRBodyA;
+        -> bodyNS: RRBodyNS;
+        -> bodyCNAME: RRBodyCNAME;
+        -> bodySOA: RRBodySOA;
+        -> bodyPTR: RRBodyPTR;
+        -> bodyMX: RRBodyMX;
+        -> bodyTXT: RRBodyTXT;
+        -> bodyAAAA: RRBodyAAAA;
+        -> bodyOPT: RRBodyOPT;
+        -> bodyDS: RRBodyDS;
+        -> bodyKEY: RRBodyKEY;
+        -> bodyRRSIG: RRBodyRRSIG;
+        -> bodyNSEC3: RRBodyNSEC3;
+    };
+};
+
+type RRType = enum {
+    A = 1,
+    NS = 2,
+    CNAME = 5,
+    SOA = 6,
+    PTR = 12,
+    MX = 15,
+    TXT = 16,
+    AAAA = 28,
+    OPT = 41,
+    DS = 43,
+    SIG = 46,
+    KEY = 48,
+    NSEC3 = 50,
+};
+
+type RRBodyA = unit() {
+    type_: uint16(1);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    address: addr &ipv4;
+};
+type RRBodyNS = unit() {
+    type_: uint16(2);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    nameServer: Domain;
+};
+type RRBodyCNAME = unit() {
+    type_: uint16(5);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    cname: Domain;
+};
+type RRBodySOA = unit() {
+    type_: uint16(6);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    primaryNameServer: Domain;
+    reponsibleAuthority: Domain;
+    serialNumber: uint32;
+    refreshInterval: uint32;
+    retryInterval: uint32;
+    expireLimit: uint32;
+    minimumTTL: uint32;
+};
+type RRBodyPTR = unit() {
+    type_: uint16(12);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    domainName: Domain;
+};
+type RRBodyMX = unit() {
+    type_: uint16(15);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    preference: uint16;
+    mailExchange: Domain;
+};
+type RRBodyTXT = unit() {
+    type_: uint16(16);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    text: bytes &size=self.dataLength;
+};
+type RRBodyAAAA = unit() {
+    type_: uint16(28);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    address: addr &ipv6;
+};
+type RRBodyOPT = unit() {
+    type_: uint16(41);
+    udpPayloadSize: uint16;
+    higherBitsInExtendedRcode: uint8;
+    EDNS0Version: uint8;
+    d0_z: bitfield(16) {
+        d0: 0;
+        z: 1..15;
+    };
+    dataLength: uint16;
+    optRecords: bytes &size=self.dataLength;
+};
+type RRBodyDS = unit() {
+    type_: uint16(43);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    keyid: uint16;
+    alg: uint8;
+    digestType: uint8;
+    digest: bytes &size=32;
+};
+type RRBodyRRSIG = unit() {
+    type_: uint16(46);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    data: RRBodyRRSigHelper &size=self.dataLength;
+};
+type RRBodyRRSigHelper = unit() {
+    typeCov: uint16;
+    alg: uint8;
+    labels: uint8;
+    OrigtimeToLive: uint32;
+    SigExp: uint32;
+    SigInception: uint32;
+    keyTag: uint16;
+    signName: Domain;
+    signature: bytes &eod;
+};
+type RRBodyKEY = unit() {
+    type_: uint16(48);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    flags: uint16;
+    protocol: uint8;
+    algorithm: uint8;
+    key: bytes &size=self.dataLength - 4;
+};
+type RRBodyNSEC3 = unit() {
+    type_: uint16(50);
+    class_: uint16;
+    timeToLive: uint32;
+    dataLength: uint16;
+    alg: uint8;
+    flags: uint8;
+    iterations: uint16;
+    saltLength: uint8;
+    salt: bytes &size=self.saltLength;
+    hashLength: uint8;
+    nexthash: bytes &size=self.hashLength;
+    typeMap: Map;
+};
+type Map = unit() {
+    mapNum: uint8;
+    length: uint8;
+    mapbits: bytes &size=self.length;
+};
+
+type Domain = unit {
+    words: Word[] &until=($$.len == 0 || $$.len >= 192);
+};
+
+type Word = unit() {
+    len: uint8 &requires=($$ < 64 || $$ >= 192);
+    reference: uint8 if (self.len >= 192);
+    letters: bytes &size=self.len if (self.len < 64);
+};
