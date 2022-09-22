@@ -32,36 +32,24 @@ map_ = Struct(
 )
 
 rrA = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x01),
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
   "address" / ipv4Address,
 )
 rrNS = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x02),
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
   "nameerver" / domain,
 )
 rrCNAME = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x05),
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
   "cname" / domain,
 )
 rrSOA = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x06),
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
@@ -74,18 +62,12 @@ rrSOA = Struct(
   "minimumTTL" / Int32ub,
 )
 rrPTR = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x0c), # 12
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
   "domainName" / domain,
 )
 rrMX = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x0f), # 15
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
@@ -93,27 +75,18 @@ rrMX = Struct(
   "mailExchange" / domain,
 )
 rrTXT = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x10), # 16
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
   "text" / Byte[this.dataLength],
 )
 rrAAAA = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x1c), # 28
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
   "address" / ipv6Address,
 )
 rrOPT = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x29), # 41
   "udpPayloadSize" / Int16ub,
   "extendedRCode" / Int8ub,
   "version" / Int8ub,
@@ -122,9 +95,6 @@ rrOPT = Struct(
   "optRecords" / Byte[this.dataLength],
 )
 rrDS = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x2b), # 43
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
@@ -136,9 +106,6 @@ rrDS = Struct(
 def len_of_sig(ctx):
     return ctx.dataLength - (ctx._io.tell() - ctx.IOIndexBeforeData)
 rrRRSIG = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x2e), # 46
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
@@ -154,9 +121,6 @@ rrRRSIG = Struct(
   "signature" / Byte[len_of_sig],
 )
 rrKEY = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x30), # 48
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
@@ -166,9 +130,6 @@ rrKEY = Struct(
   "key" / Byte[this.dataLength - 4],
 )
 rrNSEC3 = Struct(
-  "name" / domain,
-  "type" / Int16ub,
-  Check(this.type == 0x32), # 50
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
@@ -182,20 +143,24 @@ rrNSEC3 = Struct(
   "typeMap" / map_,
 )
 
-resource_record = Select(
-  rrA,
-  rrNS,
-  rrCNAME,
-  rrSOA,
-  rrPTR,
-  rrMX,
-  rrTXT,
-  rrAAAA,
-  rrOPT,
-  rrDS,
-  rrKEY,
-  rrRRSIG,
-  rrNSEC3,
+resource_record = Struct(
+  "name" / domain,
+  "type" / Int16ub,
+  Switch(this.type, {
+    1: rrA,
+    2: rrNS,
+    5: rrCNAME,
+    6: rrSOA,
+    12: rrPTR,
+    15: rrMX,
+    16: rrTXT,
+    28: rrAAAA,
+    41: rrOPT,
+    43: rrDS,
+    46: rrRRSIG,
+    48: rrKEY,
+    50: rrNSEC3,
+  })
 )
 
 dns = Struct(
