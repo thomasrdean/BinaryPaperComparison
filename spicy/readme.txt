@@ -17,3 +17,5 @@ Run the parser:
 Or, with docker:
 `sudo docker build -t spicy_dns .`
 `sudo docker run -it -v $(readlink -f ../dns_pcaps):/dns_pcaps spicy_dns python3 /spicy/parsePcap.py /dns_pcaps/dns_all_rr_types_udp.pcap`
+
+Note: dns_lookahead.spicy is a different version of dns.spicy that uses LL(1) lookahead when choosing a resource record type.
