@@ -1,2 +1,7 @@
 dns
+dns.dec
+dns.gen
+dns.gen2
+tmp
 fuzzer.cpp
+FormatFuzzer-master
