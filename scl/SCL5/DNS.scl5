@@ -306,7 +306,7 @@ DNS DEFINITIONS ::= BEGIN
     EndWord ::= (ReferenceWord | NullWord)
 
     InlineWord ::= SEQUENCE {
-        length  INTEGER (SIZE 1 BYTES) SAVEPOS,
+        length  INTEGER (SIZE 1 BYTES),
         letters OCTET STRING (SIZE CONSTRAINED)
     }
     <transfer>
