@@ -41,7 +41,7 @@ rrNS = Struct(
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
-  "nameerver" / domain,
+  "nameServer" / domain,
 )
 rrCNAME = Struct(
   "class" / Int16ub,
@@ -53,7 +53,7 @@ rrSOA = Struct(
   "class" / Int16ub,
   "timeToLive" / Int32ub,
   "dataLength" / Int16ub,
-  "primarynameerver" / domain,
+  "primaryNameServer" / domain,
   "reponsibleAuthority" / domain,
   "serialNumber" / Int32ub,
   "refreshInterval" / Int32ub,
