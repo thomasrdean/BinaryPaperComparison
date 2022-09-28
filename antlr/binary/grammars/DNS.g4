@@ -16,8 +16,8 @@ dns:
 
 setOfQuery [int n]
 locals [int i = 0]
-    : ( {$i < $n}? query {$i++;} ) * {$i == $n}?
-    ;
+  : ( {$i < $n}? query {$i++;} ) * {$i == $n}?
+  ;
 
 query:
   name=domain
@@ -27,8 +27,8 @@ query:
 
 setOfResourceRecord [int n]
 locals [int i = 0]
-    : ( {$i < $n}? resourceRecord {$i++;} ) * {$i == $n}?
-    ;
+  : ( {$i < $n}? resourceRecord {$i++;} ) * {$i == $n}?
+  ;
 
 resourceRecord:
   name=domain
@@ -191,8 +191,8 @@ returns [bool isTerminator = false]
 
 string [int n]
 locals [int i = 0]
-    : ( {$i < $n}? character {$i++;} ) * {$i == $n}?
-    ;
+  : ( {$i < $n}? character {$i++;} ) * {$i == $n}?
+  ;
 
 character returns [char val]:
   byte
@@ -205,8 +205,8 @@ ipv6Address: blob[16];
 
 blob [int n]
 locals [int i = 0]
-    : ( {$i < $n}? byte {$i++;} ) * {$i == $n}?
-    ;
+  : ( {$i < $n}? byte {$i++;} ) * {$i == $n}?
+  ;
 
 uint8 returns [uint8_t val]:
   b0=byte
